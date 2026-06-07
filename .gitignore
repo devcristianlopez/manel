@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+build/
+
+# Electron
+*.dmg
+*.exe
+*.AppImage
+*.snap
+*.flatpak
+release/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database
+*.db
+*.db-wal
+*.db-shm
