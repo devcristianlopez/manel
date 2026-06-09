@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "description": "Security Health Monitor for development environments",
   "main": "./out/main/index.js",
+  "bin": {
+    "manel": "./bin/manel-cli.js"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
+    "postinstall": "node bin/manel-cli.js postinstall",
+    "global-link": "npm link",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
