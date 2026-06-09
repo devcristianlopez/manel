@@ -9,4 +9,11 @@ export const SOFTWARE_ECOSYSTEM_MAP: Record<string, string> = {
   java: 'Maven',
   mvn: 'Maven',
   gradle: 'Maven',
+  postgresql: 'npm',
+  mysql: 'npm',
+  mariadb: 'npm',
+  mongodb: 'npm',
+  redis: 'npm',
+  sqlite: 'npm',
+  pgadmin: 'npm',
 }

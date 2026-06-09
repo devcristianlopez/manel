@@ -27,4 +27,27 @@ export const EOL_DATES: Record<string, { version: string; eolDate: string }[]> =
     { version: '10', eolDate: '2026-04' },
     { version: '11', eolDate: '2027-06' },
   ],
+  postgresql: [
+    { version: '12', eolDate: '2024-11-14' },
+    { version: '13', eolDate: '2025-11-13' },
+    { version: '14', eolDate: '2026-11-12' },
+    { version: '15', eolDate: '2027-11-11' },
+    { version: '16', eolDate: '2028-11-09' },
+    { version: '17', eolDate: '2029-11-08' },
+  ],
+  mysql: [
+    { version: '8.0', eolDate: '2026-04' },
+    { version: '8.4', eolDate: '2032-04' },
+  ],
+  mongodb: [
+    { version: '5.0', eolDate: '2025-10' },
+    { version: '6.0', eolDate: '2026-07' },
+    { version: '7.0', eolDate: '2027-11' },
+  ],
+  redis: [
+    { version: '6.2', eolDate: '2024-10' },
+    { version: '7.0', eolDate: '2025-10' },
+    { version: '7.2', eolDate: '2026-06' },
+    { version: '7.4', eolDate: '2027-06' },
+  ],
 }

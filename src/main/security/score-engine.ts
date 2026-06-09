@@ -1,8 +1,8 @@
-import { TechnologyResult, TechnologyStatus, Scan, ScanSummary } from '../../shared/types'
+import { TechnologyResult, TechnologyStatus, HardeningResult, Scan, ScanSummary } from '../../shared/types'
 import { updateScan } from '../database'
-import { categorizeTechnology, technologyStatusToScore } from './score-utils'
+import { categorizeTechnology, technologyStatusToScore, hardeningStatusToScore } from './score-utils'
 
-function calculateCategoryScore(technologies: TechnologyResult[], category: 'os' | 'tools' | 'dependencies'): number {
+function calculateCategoryScore(technologies: TechnologyResult[], category: 'os' | 'tools' | 'dependencies' | 'databases'): number {
   const filtered = technologies.filter(t => categorizeTechnology(t.name) === category)
   if (filtered.length === 0) return 0
 
@@ -24,21 +24,34 @@ function calculateCriticalsPenalty(technologies: TechnologyResult[]): number {
   return Math.max(0, 0 - 10 * activeCriticalVulns.length)
 }
 
-export function calculateScore(technologies: TechnologyResult[]): number {
-  if (technologies.length === 0) return 0
+export function calculateScore(
+  technologies: TechnologyResult[],
+  hardeningResults?: HardeningResult[]
+): number {
+  if (technologies.length === 0 && (!hardeningResults || hardeningResults.length === 0)) return 0
 
   const osScore = calculateCategoryScore(technologies, 'os')
   const toolsScore = calculateCategoryScore(technologies, 'tools')
   const depsScore = calculateCategoryScore(technologies, 'dependencies')
+  const dbsScore = calculateCategoryScore(technologies, 'databases')
   const criticalsPenalty = calculateCriticalsPenalty(technologies)
+  const hardeningScore = hardeningResults ? calculateHardeningScore(hardeningResults) : 100
 
   const finalScore =
-    osScore * 0.20 +
-    toolsScore * 0.20 +
-    depsScore * 0.40 +
+    osScore * 0.15 +
+    hardeningScore * 0.15 +
+    toolsScore * 0.10 +
+    depsScore * 0.30 +
+    dbsScore * 0.10 +
     criticalsPenalty * 0.20
 
   return Math.round(Math.max(0, Math.min(100, finalScore)))
+}
+
+export function calculateHardeningScore(results: HardeningResult[]): number {
+  if (results.length === 0) return 100
+  const total = results.reduce((sum, r) => sum + hardeningStatusToScore(r.status), 0)
+  return Math.round(total / results.length)
 }
 
 export function getTrafficLight(score: number): TechnologyStatus {
@@ -66,9 +79,10 @@ export function countBySeverity(technologies: TechnologyResult[]): {
 
 export async function generateScanSummary(
   scanId: string,
-  technologies: TechnologyResult[]
+  technologies: TechnologyResult[],
+  hardeningResults?: HardeningResult[]
 ): Promise<ScanSummary> {
-  const overallScore = calculateScore(technologies)
+  const overallScore = calculateScore(technologies, hardeningResults)
   const counts = countBySeverity(technologies)
 
   const scan: Scan = {
@@ -94,6 +108,7 @@ export async function generateScanSummary(
   return {
     scan,
     technologies,
+    hardeningResults,
     overallScore
   }
 }

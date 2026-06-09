@@ -17,6 +17,17 @@ export interface Vulnerability {
   source: string
 }
 
+export interface HardeningResult {
+  id: string
+  scan_id: string
+  check_id: string
+  category: string
+  title: string
+  status: 'pass' | 'fail' | 'warning' | 'error'
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  details: string
+}
+
 export interface Scan {
   id: string
   date: number
@@ -42,6 +53,7 @@ export interface TechnologyResult {
 export interface ScanSummary {
   scan: Scan
   technologies: TechnologyResult[]
+  hardeningResults?: HardeningResult[]
   overallScore: number
 }
 
@@ -53,8 +65,10 @@ export interface ManelApi {
   getLatestVersion: (techName: string) => Promise<{ techName: string; latestVersion: string } | null>
   analyzeSecurity: (params: { softwareList: Software[]; scanId: string }) => Promise<TechnologyResult[]>
   calculateScore: (technologies: TechnologyResult[]) => Promise<number>
-  getScanSummary: (params: { scanId: string; technologies: TechnologyResult[] }) => Promise<ScanSummary>
+  getScanSummary: (params: { scanId: string; technologies: TechnologyResult[]; hardeningResults?: HardeningResult[] }) => Promise<ScanSummary>
   getSoftwareByScanId: (scanId: string) => Promise<Software[]>
+  runHardeningChecks: (scanId: string) => Promise<HardeningResult[]>
+  getHardeningResults: (scanId: string) => Promise<HardeningResult[]>
 }
 
 declare global {

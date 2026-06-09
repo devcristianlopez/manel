@@ -49,9 +49,10 @@ import { getLatestVersion } from '../update-engine'
 const mockGetLatestVersion = getLatestVersion as ReturnType<typeof vi.fn>
 
 // Import the functions to test
-import { calculateScore, getTrafficLight, countBySeverity } from '../security/score-engine'
-import { categorizeTechnology } from '../security/score-utils'
-import { detectOS, detectNode, detectNpm } from '../scanner/detectors'
+import { calculateScore, calculateHardeningScore, getTrafficLight, countBySeverity } from '../security/score-engine'
+import { categorizeTechnology, hardeningStatusToScore } from '../security/score-utils'
+import { detectOS, detectNode, detectNpm, detectPostgreSQL, detectMySQL, detectMongoDB, detectRedis } from '../scanner/detectors'
+import { runHardeningChecks } from '../security/hardening'
 
 function createMockVuln(severity: Vulnerability['severity'], cve: string, fixed?: string): Vulnerability {
   return {
@@ -148,7 +149,7 @@ describe('Scan Flow Integration', () => {
 
       const score = calculateScore(techResults)
       expect(score).toBeGreaterThanOrEqual(60)
-      expect(getTrafficLight(score)).toBe('green')
+      expect(getTrafficLight(score)).toBe('yellow')
 
       // Step 5: Score breakdown
       const counts = countBySeverity(techResults)
@@ -251,9 +252,9 @@ describe('Scan Flow Integration', () => {
 
       const score = calculateScore(techs)
       // With 10 active critical vulns: criticalsPenalty = 0 - 10*10 = -100 → max(0, -100) = 0
-      // depsScore = 25 (red), osScore=0, toolsScore=0
-      // final = 0*0.2 + 0*0.2 + 25*0.4 + 0*0.2 = 10
-      expect(score).toBe(10)
+      // depsScore = 25 (red), osScore=0, toolsScore=0, dbsScore=0, hardeningScore=100, criticalsPenalty=0
+      // final = 0*0.15 + 100*0.15 + 0*0.10 + 25*0.30 + 0*0.10 + 0*0.20 = 15+7.5 = 22.5 → 23
+      expect(score).toBe(23)
     })
 
     it('should give green light for clean, up-to-date stack', () => {
@@ -277,7 +278,9 @@ describe('Scan Flow Integration', () => {
       ]
 
       const score = calculateScore(cleanTechs)
-      expect(score).toBe(100)
+      // os=100 (ubuntu), tools=100 (npm, git), deps=100 (node), dbs=0, hardening=100, criticals=100
+      // final = 100*0.15 + 100*0.15 + 100*0.10 + 100*0.30 + 0*0.10 + 100*0.20 = 15+15+10+30+20 = 90
+      expect(score).toBe(90)
       expect(getTrafficLight(score)).toBe('green')
     })
 
@@ -318,6 +321,220 @@ describe('Scan Flow Integration', () => {
       expect(counts.high).toBe(2)
       expect(counts.medium).toBe(1)
       expect(counts.low).toBe(0)
+    })
+  })
+
+  describe('DB detectors integration', () => {
+    beforeEach(() => {
+      vi.resetAllMocks()
+      mockCreateScan.mockReturnValue({
+        id: 'test-scan-id',
+        date: Math.floor(Date.now() / 1000),
+        score: null,
+        critical_count: 0,
+        high_count: 0,
+        medium_count: 0,
+        low_count: 0,
+        status: 'pending',
+      } as Scan)
+      mockSaveSoftware.mockImplementation(
+        (items: Omit<Software, 'id'>[]) => items.map((item, i) => ({ ...item, id: `sw-${i}` }))
+      )
+      mockGetLatestVersion.mockResolvedValue('16.2')
+    })
+
+    it('should detect PostgreSQL', () => {
+      mockExecSync.mockReturnValue('psql (PostgreSQL 16.2)\n')
+      const result = detectPostgreSQL()
+      expect(result).not.toBeNull()
+      expect(result!.name).toBe('postgresql')
+      expect(result!.version).toBe('16.2')
+      expect(categorizeTechnology('postgresql')).toBe('databases')
+    })
+
+    it('should detect MySQL', () => {
+      mockExecSync.mockReturnValue('mysql  Ver 8.0.36 for Linux on x86_64\n')
+      const result = detectMySQL()
+      expect(result).not.toBeNull()
+      expect(result!.name).toBe('mysql')
+      expect(result!.version).toBe('8.0.36')
+      expect(categorizeTechnology('mysql')).toBe('databases')
+    })
+
+    it('should detect MongoDB', () => {
+      mockExecSync.mockReturnValue('db version v7.3.1\n')
+      const result = detectMongoDB()
+      expect(result).not.toBeNull()
+      expect(result!.name).toBe('mongodb')
+      expect(result!.version).toBe('7.3.1')
+      expect(categorizeTechnology('mongodb')).toBe('databases')
+    })
+
+    it('should detect Redis', () => {
+      mockExecSync.mockReturnValue('redis-cli 7.2.5\n')
+      const result = detectRedis()
+      expect(result).not.toBeNull()
+      expect(result!.name).toBe('redis')
+      expect(result!.version).toBe('7.2.5')
+      expect(categorizeTechnology('redis')).toBe('databases')
+    })
+
+    it('should handle missing DB dependencies gracefully', () => {
+      mockExecSync.mockImplementation(() => { throw new Error('not found') })
+      expect(detectPostgreSQL()).toBeNull()
+      expect(detectMySQL()).toBeNull()
+      expect(detectMongoDB()).toBeNull()
+      expect(detectRedis()).toBeNull()
+    })
+
+    it('should calculate score including DB technologies', () => {
+      const techs: TechnologyResult[] = [
+        {
+          name: 'postgresql', installedVersion: '16.2', latestVersion: '16.2',
+          status: 'green', vulnerabilities: [], recommendation: '',
+        },
+        {
+          name: 'node', installedVersion: '22.0.0', latestVersion: '22.0.0',
+          status: 'green', vulnerabilities: [], recommendation: '',
+        },
+      ]
+
+      const score = calculateScore(techs)
+      // postgresql → 'databases' → dbsScore=100
+      // node → 'dependencies' → depsScore=100
+      // final = 0*0.15 + 100*0.15 + 0*0.10 + 100*0.30 + 100*0.10 + 100*0.20 = 15+30+10+20 = 75
+      expect(score).toBe(75)
+      expect(getTrafficLight(score)).toBe('yellow')
+    })
+
+    it('should penalize outdated DB technologies with critical vulns', () => {
+      const techs: TechnologyResult[] = [
+        {
+          name: 'mysql', installedVersion: '5.7.0', latestVersion: '8.0.36',
+          status: 'red',
+          vulnerabilities: [createMockVuln('CRITICAL', 'CVE-DB-001')],
+          recommendation: 'Update MySQL',
+        },
+      ]
+
+      const score = calculateScore(techs)
+      // dbsScore=25 (red), criticalsPenalty=0, hardeningScore=100
+      // final = 0*0.15 + 100*0.15 + 0*0.10 + 0*0.30 + 25*0.10 + 0*0.20 = 15+2.5 = 17.5 → 18
+      expect(score).toBe(18)
+      expect(getTrafficLight(score)).toBe('black')
+    })
+  })
+
+  describe('Hardening checks integration', () => {
+    const originalPlatform = process.platform
+
+    beforeEach(() => {
+      vi.resetAllMocks()
+      Object.defineProperty(process, 'platform', { value: 'linux' })
+      mockCreateScan.mockReturnValue({
+        id: 'test-scan-id',
+        date: Math.floor(Date.now() / 1000),
+        score: null,
+        critical_count: 0,
+        high_count: 0,
+        medium_count: 0,
+        low_count: 0,
+        status: 'pending',
+      } as Scan)
+    })
+
+    afterEach(() => {
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
+    })
+
+    it('should run hardening checks and score them', async () => {
+      // Mock all hardening checks to pass
+      mockExecSync.mockImplementation((cmd: string) => {
+        if (cmd === 'ufw status') return 'Status: active'
+        if (cmd === 'getenforce') return 'Enforcing'
+        if (cmd.includes('permitrootlogin')) return 'PermitRootLogin no'
+        if (cmd.includes('passwordauthentication')) return 'PasswordAuthentication no'
+        if (cmd === 'ss -tlnp') return 'LISTEN 0 128 0.0.0.0:22 0.0.0.0:*'
+        if (cmd.includes('apt') && cmd.includes('upgradable')) return ''
+        if (cmd.includes('suid_dumpable')) return 'fs.suid_dumpable = 0'
+        return null
+      })
+
+      const results = await runHardeningChecks()
+      expect(results).toHaveLength(7)
+      expect(results.every(r => r.status === 'pass')).toBe(true)
+
+      // Calculate hardening score
+      const hScore = calculateHardeningScore(results)
+      expect(hScore).toBe(100)
+    })
+
+    it('should calculate overall score with hardening results', async () => {
+      const techs: TechnologyResult[] = [
+        {
+          name: 'node', installedVersion: '22.0.0', latestVersion: '22.0.0',
+          status: 'green', vulnerabilities: [], recommendation: '',
+        },
+      ]
+
+      // Hardening: some pass, some fail
+      mockExecSync.mockImplementation((cmd: string) => {
+        if (cmd === 'ufw status') return 'Status: active'
+        if (cmd === 'getenforce') return 'Enforcing'
+        if (cmd.includes('permitrootlogin')) return 'PermitRootLogin yes' // fail
+        if (cmd.includes('passwordauthentication')) return 'PasswordAuthentication no'
+        if (cmd === 'ss -tlnp') return 'LISTEN 0 128 0.0.0.0:9999 0.0.0.0:*'  // fail (unknown port)
+        if (cmd.includes('apt') && cmd.includes('upgradable')) return ''
+        if (cmd.includes('suid_dumpable')) return 'fs.suid_dumpable = 1'  // fail
+        return null
+      })
+
+      const hardeningResults = await runHardeningChecks()
+      const hScore = calculateHardeningScore(hardeningResults)
+      // Expected: passes (firewall, selinux, ssh-password, updates) = 4 × 100 = 400
+      // fails (ssh-root, ports, coredumps) = 3 × 0 = 0
+      // total = 400 / 7 = 57.14 → 57
+      expect(hScore).toBe(57)
+
+      const score = calculateScore(techs, hardeningResults)
+      // osScore=0, hardeningScore=57, toolsScore=0, depsScore=100, dbsScore=0, criticalsPenalty=100
+      // final = 0*0.15 + 57*0.15 + 0*0.10 + 100*0.30 + 0*0.10 + 100*0.20 = 8.55+30+20 = 58.55 → 59
+      expect(score).toBe(59)
+    })
+
+    it('should return empty hardening on non-linux platforms', async () => {
+      Object.defineProperty(process, 'platform', { value: 'darwin' })
+
+      const results = await runHardeningChecks()
+      expect(results).toEqual([])
+
+      // Score with empty hardening should default to 100
+      const techs: TechnologyResult[] = [
+        {
+          name: 'node', installedVersion: '22.0.0', latestVersion: '22.0.0',
+          status: 'green', vulnerabilities: [], recommendation: '',
+        },
+      ]
+      const score = calculateScore(techs, [])
+      // Empty hardening results → hardeningScore = 100
+      // final = 65
+      expect(score).toBe(65)
+    })
+
+    it('should handle hardening check failures gracefully in score', async () => {
+      // All hardening checks fail to execute
+      mockExecSync.mockImplementation(() => { throw new Error('not found') })
+
+      const results = await runHardeningChecks()
+      expect(results).toHaveLength(7)
+      // Each check should still return gracefully via safeExec
+      results.forEach(r => {
+        expect(['pass', 'fail', 'warning', 'error']).toContain(r.status)
+      })
+
+      const score = calculateHardeningScore(results)
+      expect(score).toBeGreaterThanOrEqual(0)
+      expect(score).toBeLessThanOrEqual(100)
     })
   })
 })

@@ -5,6 +5,8 @@ import { TechnologyList } from './components/TechnologyList'
 import { ScanButton } from './components/ScanButton'
 import { ScanProgress } from './components/ScanProgress'
 import { TechnologyDetail } from './components/TechnologyDetail'
+import { DatabaseSection } from './components/DatabaseSection'
+import { HardeningSection } from './components/HardeningSection'
 
 type View = 'dashboard' | 'detail'
 
@@ -41,8 +43,12 @@ function App() {
       const softwares = await window.manel.getSoftwareByScanId(scanId)
       setScanStatus('Consultando vulnerabilidades...')
       const technologies = await window.manel.analyzeSecurity({ softwareList: softwares, scanId })
+
+      setScanStatus('Ejecutando checks de hardening...')
+      const hardeningResults = await window.manel.runHardeningChecks(scanId)
+
       setScanStatus('Calculando puntuación...')
-      const summary = await window.manel.getScanSummary({ scanId, technologies })
+      const summary = await window.manel.getScanSummary({ scanId, technologies, hardeningResults })
       setScanResult(summary)
       setIsScanning(false)
       setScanStatus('')
@@ -172,10 +178,28 @@ function App() {
               </div>
             </div>
 
-            <TechnologyList
-              technologies={scanResult.technologies}
-              onSelect={handleSelectTech}
-            />
+            {scanResult.hardeningResults && scanResult.hardeningResults.length > 0 && (
+              <HardeningSection results={scanResult.hardeningResults} />
+            )}
+
+            {(() => {
+              const dbNames = ['postgresql', 'mysql', 'mariadb', 'mongodb', 'redis', 'sqlite', 'pgadmin']
+              const dbTechs = scanResult.technologies.filter(t => dbNames.includes(t.name))
+              if (dbTechs.length === 0) return null
+              return <DatabaseSection technologies={dbTechs} onSelect={handleSelectTech} />
+            })()}
+
+            {(() => {
+              const dbNames = ['postgresql', 'mysql', 'mariadb', 'mongodb', 'redis', 'sqlite', 'pgadmin']
+              const nonDbTechs = scanResult.technologies.filter(t => !dbNames.includes(t.name))
+              if (nonDbTechs.length === 0) return null
+              return (
+                <>
+                  <h2 className="text-lg font-semibold text-gray-300">Herramientas y Dependencias</h2>
+                  <TechnologyList technologies={nonDbTechs} onSelect={handleSelectTech} />
+                </>
+              )
+            })()}
           </>
         )}
 

@@ -172,6 +172,52 @@ const TECH_SOURCES: Record<string, SourceConfig> = {
       const sorted = sortByCycleDesc(data)
       return (sorted[0]?.latest as string) ?? (sorted[0]?.cycle as string) ?? null
     }
+  },
+  postgresql: {
+    url: 'https://endoflife.date/api/postgresql.json',
+    parse: (data: unknown): string | null => {
+      if (!Array.isArray(data)) return null
+      const sorted = sortByCycleDesc(data)
+      return (sorted[0]?.latest as string) ?? null
+    }
+  },
+  mysql: {
+    url: 'https://endoflife.date/api/mysql.json',
+    parse: (data: unknown): string | null => {
+      if (!Array.isArray(data)) return null
+      const sorted = sortByCycleDesc(data)
+      return (sorted[0]?.latest as string) ?? null
+    }
+  },
+  mongodb: {
+    url: 'https://api.github.com/repos/mongodb/mongo/releases/latest',
+    parse: (data: unknown): string | null => {
+      const d = data as Record<string, unknown>
+      if (typeof d?.tag_name !== 'string') return null
+      return (d.tag_name as string).replace(/^r/, '').replace(/^v/, '')
+    }
+  },
+  redis: {
+    url: 'https://api.github.com/repos/redis/redis/releases/latest',
+    parse: (data: unknown): string | null => {
+      const d = data as Record<string, unknown>
+      if (typeof d?.tag_name !== 'string') return null
+      return (d.tag_name as string).replace(/^v/, '')
+    }
+  },
+  sqlite: {
+    url: 'https://www.sqlite.org/version.html',
+    parse: (_data: unknown): string | null => {
+      return null
+    }
+  },
+  pgadmin: {
+    url: 'https://api.github.com/repos/postgres/pgadmin4/releases/latest',
+    parse: (data: unknown): string | null => {
+      const d = data as Record<string, unknown>
+      if (typeof d?.tag_name !== 'string') return null
+      return (d.tag_name as string).replace(/^v/, '').replace(/^REL_/, '')
+    }
   }
 }
 

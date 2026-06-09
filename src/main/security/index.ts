@@ -1,9 +1,10 @@
 import { ipcMain } from 'electron'
 import { queryAllSources } from './vulnerability-sources'
 import { VulnerabilityCache } from './cache'
-import { saveVulnerabilities } from '../database'
+import { saveVulnerabilities, saveHardeningResults, getHardeningResultsByScanId } from '../database'
 import { analyzeAllTechnologies } from './security-engine'
-import type { Vulnerability, Software, TechnologyResult, ScanSummary } from '../../shared/types'
+import { runHardeningChecks } from './hardening'
+import type { Vulnerability, Software, TechnologyResult, ScanSummary, HardeningResult } from '../../shared/types'
 import { calculateScore, countBySeverity, generateScanSummary } from './score-engine'
 
 const cache = new VulnerabilityCache()
@@ -54,9 +55,9 @@ export function registerSecurityHandlers(): void {
 
   ipcMain.handle(
     'get-scan-summary',
-    async (_event, params: { scanId: string; technologies: TechnologyResult[] }): Promise<ScanSummary> => {
-      const { scanId, technologies } = params
-      return generateScanSummary(scanId, technologies)
+    async (_event, params: { scanId: string; technologies: TechnologyResult[]; hardeningResults?: HardeningResult[] }): Promise<ScanSummary> => {
+      const { scanId, technologies, hardeningResults } = params
+      return generateScanSummary(scanId, technologies, hardeningResults)
     }
   )
 
@@ -73,4 +74,17 @@ export function registerSecurityHandlers(): void {
       return await analyzeAllTechnologies(softwareList, scanId)
     }
   )
+
+  ipcMain.handle('run-hardening-checks', async (_event, scanId: string): Promise<HardeningResult[]> => {
+    const results = await runHardeningChecks()
+    const withScanId = results.map(r => ({
+      ...r,
+      scan_id: scanId
+    }))
+    return saveHardeningResults(withScanId as any)
+  })
+
+  ipcMain.handle('get-hardening-results', async (_event, scanId: string): Promise<HardeningResult[]> => {
+    return getHardeningResultsByScanId(scanId)
+  })
 }

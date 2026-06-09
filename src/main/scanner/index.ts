@@ -14,7 +14,14 @@ import {
   detectJava,
   detectMaven,
   detectGradle,
-  detectVSCode
+  detectVSCode,
+  detectPostgreSQL,
+  detectMySQL,
+  detectMariaDB,
+  detectMongoDB,
+  detectRedis,
+  detectSQLite,
+  detectPgAdmin
 } from './detectors'
 import { createScan, updateScan, saveSoftware, getSoftwareByScanId } from '../database'
 import { Software, Scan } from '../../shared/types'
@@ -50,7 +57,14 @@ export function registerScannerHandlers() {
         detectJava,
         detectMaven,
         detectGradle,
-        detectVSCode
+        detectVSCode,
+        detectPostgreSQL,
+        detectMySQL,
+        detectMariaDB,
+        detectMongoDB,
+        detectRedis,
+        detectSQLite,
+        detectPgAdmin
       ]
 
       const now = Math.floor(Date.now() / 1000)

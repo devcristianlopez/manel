@@ -25,6 +25,13 @@ import {
   detectMaven,
   detectGradle,
   detectVSCode,
+  detectPostgreSQL,
+  detectMySQL,
+  detectMariaDB,
+  detectMongoDB,
+  detectRedis,
+  detectSQLite,
+  detectPgAdmin,
 } from '../detectors'
 
 const mockExecSync = execSync as ReturnType<typeof vi.fn>
@@ -303,5 +310,168 @@ describe('detectVSCode', () => {
   it('should return null when version line is invalid', () => {
     mockExecSync.mockReturnValue('')
     expect(detectVSCode()).toBeNull()
+  })
+})
+
+describe('detectPostgreSQL', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect postgresql version', () => {
+    mockExecSync.mockReturnValue('psql (PostgreSQL 16.2)\n')
+    expect(detectPostgreSQL()).toEqual({ name: 'postgresql', version: '16.2', path: 'psql' })
+  })
+
+  it('should detect postgresql with three-part version', () => {
+    mockExecSync.mockReturnValue('psql (PostgreSQL 14.13.0)\n')
+    expect(detectPostgreSQL()).toEqual({ name: 'postgresql', version: '14.13.0', path: 'psql' })
+  })
+
+  it('should return null when postgresql not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectPostgreSQL()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('psql: could not connect to server\n')
+    expect(detectPostgreSQL()).toBeNull()
+  })
+})
+
+describe('detectMySQL', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect mysql version', () => {
+    mockExecSync.mockReturnValue('mysql  Ver 8.0.36 for Linux on x86_64 (MySQL Community Server - GPL)\n')
+    expect(detectMySQL()).toEqual({ name: 'mysql', version: '8.0.36', path: 'mysql' })
+  })
+
+  it('should return null when mysql not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectMySQL()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('mysql: unknown option --v\n')
+    expect(detectMySQL()).toBeNull()
+  })
+})
+
+describe('detectMariaDB', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect mariadb version', () => {
+    mockExecSync.mockReturnValue('mariadb from 11.4.2-MariaDB, client 15.2 for Linux (x86_64)\n')
+    expect(detectMariaDB()).toEqual({ name: 'mariadb', version: '11.4.2', path: 'mariadb' })
+  })
+
+  it('should return null when mariadb not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectMariaDB()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('mariadb: unrecognized option\n')
+    expect(detectMariaDB()).toBeNull()
+  })
+})
+
+describe('detectMongoDB', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect mongodb version', () => {
+    mockExecSync.mockReturnValue('db version v7.3.1\nBuild Info: {\n  "version": "7.3.1"\n}\n')
+    expect(detectMongoDB()).toEqual({ name: 'mongodb', version: '7.3.1', path: 'mongod' })
+  })
+
+  it('should detect mongodb version without v prefix', () => {
+    mockExecSync.mockReturnValue('db version 6.0.16\n')
+    expect(detectMongoDB()).toEqual({ name: 'mongodb', version: '6.0.16', path: 'mongod' })
+  })
+
+  it('should return null when mongodb not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectMongoDB()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('mongod: unrecognized option\n')
+    expect(detectMongoDB()).toBeNull()
+  })
+})
+
+describe('detectRedis', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect redis version', () => {
+    mockExecSync.mockReturnValue('redis-cli 7.2.5\n')
+    expect(detectRedis()).toEqual({ name: 'redis', version: '7.2.5', path: 'redis-cli' })
+  })
+
+  it('should return null when redis not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectRedis()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('redis-cli: command not found\n')
+    expect(detectRedis()).toBeNull()
+  })
+})
+
+describe('detectSQLite', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect sqlite3 version', () => {
+    mockExecSync.mockReturnValue('3.45.1 2024-01-30\n')
+    expect(detectSQLite()).toEqual({ name: 'sqlite3', version: '3.45.1', path: 'sqlite3' })
+  })
+
+  it('should return null when sqlite3 not found', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectSQLite()).toBeNull()
+  })
+
+  it('should return null when output does not match regex', () => {
+    mockExecSync.mockReturnValue('sqlite3: unknown option\n')
+    expect(detectSQLite()).toBeNull()
+  })
+})
+
+describe('detectPgAdmin', () => {
+  beforeEach(() => { mockExecSync.mockReset() })
+
+  it('should detect pgadmin4 version via direct command', () => {
+    mockExecSync.mockReturnValue('pgAdmin 4 v8.12.0\n')
+    expect(detectPgAdmin()).toEqual({ name: 'pgadmin4', version: '8.12.0', path: 'pgadmin4' })
+  })
+
+  it('should detect pgadmin4 with two-part version', () => {
+    mockExecSync.mockReturnValue('pgAdmin 4 v8.12\n')
+    expect(detectPgAdmin()).toEqual({ name: 'pgadmin4', version: '8.12', path: 'pgadmin4' })
+  })
+
+  it('should fall back to pip show when direct command fails', () => {
+    mockExecSync
+      .mockReturnValueOnce(null)           // pgadmin4 --version fails
+      .mockReturnValueOnce('Version: 8.12.0\n') // pip show succeeds
+    expect(detectPgAdmin()).toEqual({ name: 'pgadmin4', version: '8.12.0', path: 'pgadmin4' })
+  })
+
+  it('should fall back to dpkg when direct and pip fail', () => {
+    mockExecSync
+      .mockReturnValueOnce(null)           // pgadmin4 --version fails
+      .mockReturnValueOnce(null)           // pip show fails
+      .mockReturnValueOnce('ii  pgadmin4  8.12.0  amd64  ...') // dpkg succeeds
+    expect(detectPgAdmin()).toEqual({ name: 'pgadmin4', version: '8.12.0', path: 'pgadmin4' })
+  })
+
+  it('should return null when all detection methods fail', () => {
+    mockExecSync.mockReturnValue(null)  // all safeExec calls return null
+    expect(detectPgAdmin()).toBeNull()
+  })
+
+  it('should return null when execSync throws on all methods', () => {
+    mockExecSync.mockImplementation(() => { throw new Error('not found') })
+    expect(detectPgAdmin()).toBeNull()
   })
 })

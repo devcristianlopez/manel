@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import { app } from 'electron'
 import { randomUUID } from 'crypto'
-import { Software, Vulnerability, Scan } from '../../shared/types'
+import { Software, Vulnerability, Scan, HardeningResult } from '../../shared/types'
 
 let db: Database.Database | null = null
 
@@ -40,6 +40,18 @@ function initializeSchema() {
       FOREIGN KEY (scan_id) REFERENCES scans(id)
     );
 
+    CREATE TABLE IF NOT EXISTS hardening_results (
+      id TEXT PRIMARY KEY,
+      scan_id TEXT NOT NULL,
+      check_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      details TEXT,
+      FOREIGN KEY (scan_id) REFERENCES scans(id)
+    );
+
     CREATE TABLE IF NOT EXISTS vulnerabilities (
       id TEXT PRIMARY KEY,
       cve TEXT,
@@ -69,6 +81,29 @@ export function saveSoftware(softwareList: Omit<Software, 'id'>[]): Software[] {
   })
   insertMany(softwareList)
   return results
+}
+
+export function saveHardeningResults(results: Omit<HardeningResult, 'id'>[]): HardeningResult[] {
+  const database = getDatabase()
+  const stmt = database.prepare(`
+    INSERT INTO hardening_results (id, scan_id, check_id, category, title, status, severity, details)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+  const saved: HardeningResult[] = []
+  const insertMany = database.transaction((items: Omit<HardeningResult, 'id'>[]) => {
+    for (const item of items) {
+      const id = randomUUID()
+      stmt.run(id, item.scan_id, item.check_id, item.category, item.title, item.status, item.severity, item.details)
+      saved.push({ ...item, id })
+    }
+  })
+  insertMany(results)
+  return saved
+}
+
+export function getHardeningResultsByScanId(scanId: string): HardeningResult[] {
+  const database = getDatabase()
+  return database.prepare('SELECT * FROM hardening_results WHERE scan_id = ? ORDER BY category').all(scanId) as HardeningResult[]
 }
 
 export function saveVulnerabilities(vulns: Omit<Vulnerability, 'id'>[]): Vulnerability[] {

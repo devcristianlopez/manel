@@ -12,8 +12,10 @@ const api = {
   getLatestVersion: (techName: string) => ipcRenderer.invoke('get-latest-version', techName),
   analyzeSecurity: (params: { softwareList: any[]; scanId: string }) => ipcRenderer.invoke('analyze-security', params),
   calculateScore: (technologies: any[]) => ipcRenderer.invoke('calculate-score', technologies),
-  getScanSummary: (params: { scanId: string; technologies: any[] }) => ipcRenderer.invoke('get-scan-summary', params),
-  getSoftwareByScanId: (scanId: string) => ipcRenderer.invoke('get-software-by-scan-id', scanId)
+  getScanSummary: (params: { scanId: string; technologies: any[]; hardeningResults?: any[] }) => ipcRenderer.invoke('get-scan-summary', params),
+  getSoftwareByScanId: (scanId: string) => ipcRenderer.invoke('get-software-by-scan-id', scanId),
+  runHardeningChecks: (scanId: string) => ipcRenderer.invoke('run-hardening-checks', scanId),
+  getHardeningResults: (scanId: string) => ipcRenderer.invoke('get-hardening-results', scanId)
 }
 
 contextBridge.exposeInMainWorld('manel', api)

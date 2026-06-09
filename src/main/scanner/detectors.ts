@@ -154,3 +154,61 @@ export function detectVSCode(): DetectorResult | null {
   if (!version) return null
   return { name: 'code', version, path: 'code' }
 }
+
+export function detectPostgreSQL(): DetectorResult | null {
+  const out = safeExec('psql --version')
+  const version = extractVersion(out, /PostgreSQL\s+(\d+\.\d+(?:\.\d+)?)/)
+  if (!version) return null
+  return { name: 'postgresql', version, path: 'psql' }
+}
+
+export function detectMySQL(): DetectorResult | null {
+  const out = safeExec('mysql --version')
+  const version = extractVersion(out, /Ver\s+(\d+\.\d+\.\d+)/)
+  if (!version) return null
+  return { name: 'mysql', version, path: 'mysql' }
+}
+
+export function detectMariaDB(): DetectorResult | null {
+  const out = safeExec('mariadb --version')
+  const version = extractVersion(out, /from\s+(\d+\.\d+\.\d+)/)
+  if (!version) return null
+  return { name: 'mariadb', version, path: 'mariadb' }
+}
+
+export function detectMongoDB(): DetectorResult | null {
+  const out = safeExec('mongod --version')
+  const version = extractVersion(out, /db version v?(\d+\.\d+\.\d+)/)
+  if (!version) return null
+  return { name: 'mongodb', version, path: 'mongod' }
+}
+
+export function detectRedis(): DetectorResult | null {
+  const out = safeExec('redis-cli --version')
+  const version = extractVersion(out, /redis-cli\s+(\d+\.\d+\.\d+)/)
+  if (!version) return null
+  return { name: 'redis', version, path: 'redis-cli' }
+}
+
+export function detectSQLite(): DetectorResult | null {
+  const out = safeExec('sqlite3 --version')
+  const version = extractVersion(out, /^(\d+\.\d+\.\d+)/)
+  if (!version) return null
+  return { name: 'sqlite3', version, path: 'sqlite3' }
+}
+
+export function detectPgAdmin(): DetectorResult | null {
+  const out = safeExec('pgadmin4 --version 2>/dev/null')
+  let version = extractVersion(out, /pgAdmin\s+\d+\s+v?(\d+\.\d+(?:\.\d+)?)/i)
+  if (version) return { name: 'pgadmin4', version, path: 'pgadmin4' }
+
+  const pipOut = safeExec('pip show pgadmin4 2>/dev/null')
+  version = extractVersion(pipOut, /Version:\s*(\d+\.\d+(?:\.\d+)?)/i)
+  if (version) return { name: 'pgadmin4', version, path: 'pgadmin4' }
+
+  const dpkgOut = safeExec('dpkg -l pgadmin4 2>/dev/null')
+  version = extractVersion(dpkgOut, /pgadmin4\s+(\d+\.\d+(?:\.\d+)?)/)
+  if (version) return { name: 'pgadmin4', version, path: 'pgadmin4' }
+
+  return null
+}
