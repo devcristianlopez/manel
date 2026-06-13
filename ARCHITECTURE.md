@@ -2,7 +2,13 @@
 
 ## Descripción general
 
-Manel es una aplicación de escritorio Electron que monitorea la seguridad del entorno de desarrollo local. Sigue una arquitectura de tres capas:
+Manel es un Security Health Monitor para entornos de desarrollo. Tiene dos modos de operación:
+
+### Modo CLI (standalone)
+El CLI (`bin/manel-cli.js`) funciona sin Electron. Ejecuta detectores directamente con `child_process.execSync()` y muestra resultados en la terminal con colores ANSI. Comandos: `status`, `scan`, `hardening`, `run`, `help`, `version`.
+
+### Modo Electron (dashboard)
+Aplicación de escritorio con React + Tailwind. Sigue una arquitectura de tres capas:
 
 1. **Renderer (React)**: Interfaz de usuario con dashboard y vista de detalle.
 2. **Preload (contextBridge)**: Puente seguro entre renderer y main process.
@@ -11,6 +17,23 @@ Manel es una aplicación de escritorio Electron que monitorea la seguridad del e
 La comunicación entre renderer y main se realiza exclusivamente a través de IPC mediante `contextBridge` e `ipcMain.handle`, con `contextIsolation: true` y `nodeIntegration: false` por seguridad.
 
 ## Flujo de datos
+
+### Modo CLI
+
+```
+Terminal
+  |
+manel status / scan / hardening / help
+  |
+  v
+bin/manel-cli.js (Node.js standalone)
+  |
+  +-- execSync() -> node -v, git --version, psql --version, etc.
+  +-- ANSI colors -> tabla coloreada en terminal
+  +-- NO requiere Electron ni SQLite
+```
+
+### Modo Electron
 
 ```
 +----------+     IPC invoke     +---------------+
@@ -26,7 +49,7 @@ La comunicación entre renderer y main se realiza exclusivamente a través de IP
                                |                  |
                                |  +------------+  |
                                |  |  Scanner    |  |  exec() CLI
-                               |  |  (detect)   | ----------> node -v, git --version, etc.
+                               |  |  (detect)   | ----------> node -v, psql --version, etc.
                                |  +-----+------+  |
                                |        |          |
                                |  +-----v------+  |
@@ -40,13 +63,18 @@ La comunicación entre renderer y main se realiza exclusivamente a través de IP
                                |  +-----+------+  |
                                |        |          |
                                |  +-----v------+  |
+                               |  |  Hardening  |  |  checks de seguridad del SO
+                               |  |  (Linux)    |  |
+                               |  +-----+------+  |
+                               |        |          |
+                               |  +-----v------+  |
                                |  |  Update     |  |  fetch() npm / PyPI / GitHub / EoL
                                |  |  Engine     |  |
                                |  +-----+------+  |
                                |        |          |
                                |  +-----v------+  |
                                |  |  Score      |  |  cálculo local
-                               |  |  Engine     |  |
+                               |  |  Engine     |  |  (OS + Hardening + Tools + Deps + DBs)
                                |  +------------+  |
                                +-------------------+
 ```

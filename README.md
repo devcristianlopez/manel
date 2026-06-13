@@ -14,10 +14,12 @@ Manel es un Security Health Monitor para entornos de desarrollo. Escanea localme
 
 ## Características
 
-- **Escaneo local**: Detecta SO, herramientas de desarrollo y lenguajes instalados via CLI.
+- **CLI integrado**: Comandos `manel status`, `manel scan`, `manel hardening` desde la terminal.
+- **Escaneo local**: Detecta SO, herramientas de desarrollo, lenguajes y bases de datos instalados via CLI.
 - **Detección de vulnerabilidades**: Consulta OSV, NVD y GitHub Security Advisories en paralelo.
 - **Versiones actuales**: Consulta las últimas versiones estables desde npm, PyPI, GitHub, endoflife.date, etc.
-- **Security Score**: Puntuación de 0 a 100 ponderada por categoría (SO, herramientas, dependencias) con penalización por vulnerabilidades críticas.
+- **Security Score**: Puntuación de 0 a 100 ponderada por categoría (OS, hardening, tools, dependencias, databases) con penalización por vulnerabilidades críticas.
+- **Hardening del sistema**: 7 checks de seguridad Linux (firewall, SELinux, SSH, puertos, actualizaciones).
 - **Dashboard visual**: Semáforo con score, conteo de vulnerabilidades por severidad y lista de tecnologías.
 - **Vista de detalle**: Información individual por tecnología con CVEs, severidad y recomendaciones.
 - **Recomendaciones de actualización**: Acción sugerida para cada tecnología según estado.
@@ -28,6 +30,7 @@ Manel es un Security Health Monitor para entornos de desarrollo. Escanea localme
 - **Lenguajes y runtimes**: Node.js, Python, Python 3, Java
 - **Gestores de paquetes**: npm, Yarn, pnpm, pip, Maven, Gradle
 - **Herramientas**: Git, Docker, Docker Compose, VS Code
+- **Bases de datos**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, pgAdmin
 - **Sistemas operativos**: Ubuntu, Debian, Fedora, macOS, Windows
 
 ## Requisitos
@@ -41,8 +44,24 @@ Manel es un Security Health Monitor para entornos de desarrollo. Escanea localme
 
 ## Instalación
 
+### Instalación global (recomendada)
+
 ```bash
-git clone <repo-url>
+# Con npm global
+git clone https://github.com/devcristianlopez/manel.git
+cd manel
+npm install
+npm run build
+npm install -g .
+
+# O con el script automático
+bash setup.sh
+```
+
+### Solo para desarrollo
+
+```bash
+git clone https://github.com/devcristianlopez/manel.git
 cd manel
 npm install
 npm run dev
@@ -50,13 +69,37 @@ npm run dev
 
 ## Uso
 
-1. Abrir Manel. Se muestra la pantalla de inicio con el botón "Escanear ahora".
-2. Hacer clic en "Escanear ahora". El escáner detecta secuencialmente cada tecnología instalada.
+### CLI (interfaz de línea de comandos)
+
+Una vez instalado globalmente, usa `manel` desde cualquier terminal:
+
+| Comando | Descripción |
+|---------|-------------|
+| `manel status` | Escaneo rápido del entorno |
+| `manel scan` | Escaneo completo con vulnerabilidades y hardening |
+| `manel hardening` | Checks de seguridad del sistema (firewall, SELinux, SSH, etc.) |
+| `manel run` | Abre el dashboard Electron |
+| `manel help` | Muestra ayuda con todos los comandos |
+| `manel version` | Versión instalada |
+
+```bash
+# Ejemplos
+manel status      # Ver estado rápido
+manel scan        # Escaneo completo
+manel run         # Abrir dashboard gráfico
+```
+
+### Dashboard Electron
+
+1. Ejecutar `manel run` para abrir la aplicación.
+2. Hacer clic en **"Escanear ahora"**. El escáner detecta secuencialmente cada tecnología instalada.
 3. Al completar el escaneo, Manel consulta vulnerabilidades y últimas versiones para cada tecnología detectada.
 4. El dashboard muestra:
    - **Security Score** con barra de progreso y semáforo (verde/amarillo/rojo/negro).
+   - **Sección de bases de datos** con estado individual.
+   - **Sección de hardening** con checks de seguridad pass/fail.
    - **Conteo de vulnerabilidades** por severidad (críticas, altas, medias, bajas).
-   - **Lista de tecnologías** con indicador de estado y número de vulnerabilidades.
+   - **Lista de tecnologías** con indicador de estado.
 5. Hacer clic en cualquier tecnología para ver detalle con CVEs, descripciones y acción recomendada.
 
 ## Desarrollo
@@ -76,30 +119,36 @@ npm run lint     # Type checking (tsc --noEmit)
 | `npm run build` | Compilación para producción (electron-vite build) |
 | `npm run start` | Vista previa del build compilado |
 | `npm run lint` | Verificación de tipos TypeScript |
+| `npm link` | Instalar comando `manel` globalmente |
+| `npm test` | Ejecutar suite de tests (Vitest) |
 
 ## Estructura del proyecto
 
 ```
 manel/
+├── bin/                       # CLI standalone (sin Electron)
+│   ├── manel                  # Entry point bash
+│   └── manel-cli.js           # CLI core (Node.js, 21 detectores)
 ├── src/
 │   ├── main/                  # Proceso principal de Electron
 │   │   ├── index.ts           # Punto de entrada, ventana e IPC
 │   │   ├── ipc/index.ts       # Registro de handlers IPC
-│   │   ├── database/index.ts  # SQLite (scans, software, vulnerabilities)
+│   │   ├── database/index.ts  # SQLite (scans, software, vulnerabilities, hardening)
 │   │   ├── scanner/           # Detección de software via CLI
 │   │   │   ├── index.ts       # Handler y orquestación del scan
-│   │   │   └── detectors.ts   # Detectores individuales
+│   │   │   └── detectors.ts   # 21 detectores + OS
 │   │   ├── security/          # Motor de seguridad
 │   │   │   ├── index.ts       # Handlers IPC de seguridad
 │   │   │   ├── security-engine.ts   # Análisis y estado de tecnologías
 │   │   │   ├── score-engine.ts      # Cálculo de Security Score
 │   │   │   ├── score-utils.ts       # Categorización y utilidades de score
 │   │   │   ├── vulnerability-sources.ts # OSV, NVD, GHSA queries
+│   │   │   ├── hardening.ts         # 7 checks de seguridad Linux
 │   │   │   ├── eol.ts               # Fechas de fin de soporte
 │   │   │   ├── ecosystem-map.ts     # Mapeo software -> ecosistema
 │   │   │   └── cache.ts             # Caché de vulnerabilidades
 │   │   └── update-engine/     # Consulta de últimas versiones
-│   │       ├── index.ts       # Fuentes y handlers
+│   │       ├── index.ts       # 24 fuentes y handlers
 │   │       └── __tests__/     # Tests del update engine
 │   ├── preload/
 │   │   └── index.ts           # Context bridge (API expuesta al renderer)
@@ -111,11 +160,15 @@ manel/
 │   │   │   ├── TechnologyList.tsx  # Grid de tecnologías
 │   │   │   ├── TechnologyItem.tsx  # Item individual
 │   │   │   ├── TechnologyDetail.tsx # Vista detalle
+│   │   │   ├── DatabaseSection.tsx # Sección de bases de datos
+│   │   │   ├── HardeningSection.tsx # Sección de hardening
 │   │   │   ├── ScanButton.tsx      # Botón de escaneo
 │   │   │   └── ScanProgress.tsx    # Indicador de progreso
 │   │   └── assets/index.css        # Estilos Tailwind
 │   └── shared/
 │       └── types.ts           # Tipos compartidos (Software, Vulnerability, Scan, etc.)
+├── index.html                 # Landing page del proyecto
+├── setup.sh                   # Script de instalación global
 ├── electron.vite.config.ts    # Configuración de electron-vite
 ├── electron-builder.yml       # Configuración de empaquetado
 ├── tailwind.config.js
@@ -126,13 +179,29 @@ manel/
 ## Arquitectura
 
 ```
-UI (React) ↔ IPC (preload) ↔ Main Process
-                              ├── Scanner → CLI commands
-                              ├── Database → SQLite (manel.db)
-                              ├── Security Engine → OSV / NVD / GitHub APIs
-                              ├── Update Engine → npm / PyPI / GitHub / EoL APIs
-                              └── Score Engine → cálculo local
+CLI (manel status/scan/hardening)
+  └── Node.js child_process → comandos del sistema
+
+Electron App (manel run)
+  └── UI (React) ↔ IPC (preload) ↔ Main Process
+                                    ├── Scanner → CLI commands
+                                    ├── Database → SQLite (manel.db)
+                                    ├── Security Engine → OSV / NVD / GitHub APIs
+                                    ├── Update Engine → npm / PyPI / GitHub / EoL APIs
+                                    ├── Hardening → checks de seguridad del SO
+                                    └── Score Engine → cálculo local
 ```
+
+### Security Score
+
+| Categoría | Peso |
+|-----------|------|
+| Sistema Operativo | 15% |
+| Hardening | 15% |
+| Herramientas | 10% |
+| Dependencias | 30% |
+| Bases de Datos | 10% |
+| Vulnerabilidades críticas | 20% |
 
 Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para documentación técnica detallada.
 
