@@ -2,14 +2,11 @@
   "name": "manel",
   "version": "0.1.0",
   "description": "Security Health Monitor for development environments",
-  "main": "./out/main/index.js",
   "bin": {
     "manel": "./bin/manel-cli.js"
   },
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "start": "electron-vite preview",
+    "build:cli": "tsc -p tsconfig.cli.json",
     "postinstall": "node bin/manel-cli.js postinstall",
     "global-link": "npm link",
     "test": "vitest run",
@@ -19,27 +16,13 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "commander": "^15.0.0"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^4.1.8",
-    "autoprefixer": "^10.4.20",
-    "electron": "^33.2.1",
-    "electron-builder": "^25.1.8",
-    "electron-vite": "^2.3.0",
-    "jsdom": "^29.1.1",
     "node-gyp": "^11.5.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
     "vitest": "^4.1.8"
   }

@@ -37,3 +37,12 @@ npm-debug.log*
 *.db
 *.db-wal
 *.db-shm
+
+# Coverage reports
+coverage/
+
+# Compiled TS output (TypeScript source is authoritative)
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map
