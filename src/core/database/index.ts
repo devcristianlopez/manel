@@ -118,6 +118,18 @@ function initializeSchema(): void {
       source TEXT,
       FOREIGN KEY (software_id) REFERENCES software(id)
     );
+
+    CREATE TABLE IF NOT EXISTS version_cache (
+      tech_name TEXT PRIMARY KEY,
+      latest_version TEXT NOT NULL,
+      fetched_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS vulnerability_cache (
+      cache_key TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      fetched_at INTEGER NOT NULL
+    );
   `)
 }
 

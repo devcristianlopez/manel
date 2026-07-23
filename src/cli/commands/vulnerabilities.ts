@@ -21,6 +21,7 @@ import { Spinner, setActiveSpinner } from '../spinner'
 import { getPackageVersion } from '../version'
 import { shouldFailOnSeverityVulns } from '../utils'
 import { internalError, formatErrorForStderr } from '../errors'
+import { createScan, updateScan, saveSoftware, saveVulnerabilities } from '../../core/database'
 
 // ============================================================================
 // 1. Command Registration
@@ -101,6 +102,53 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
         },
       }
     )
+
+    // Persist results to database
+    try {
+      const scan = createScan()
+
+      // Save software entries
+      const softwareRecords = saveSoftware(
+        softwareList.map(sw => ({
+          name: sw.name,
+          version: sw.version,
+          path: sw.path,
+          detectedAt: Math.floor(Date.now() / 1000),
+          scanId: scan.id,
+        }))
+      )
+
+      // Save vulnerabilities
+      for (const techResult of technologyResults) {
+        const softwareRecord = softwareRecords.find(r => r.name === techResult.name)
+        if (softwareRecord && techResult.vulnerabilities.length > 0) {
+          saveVulnerabilities(
+            techResult.vulnerabilities.map(v => ({
+              cve: v.cve,
+              severity: v.severity,
+              description: v.description,
+              softwareId: softwareRecord.id,
+              fixedVersion: v.fixedVersion,
+              source: v.source,
+            }))
+          )
+        }
+      }
+
+      // Update scan with final counts
+      const allVulns = technologyResults.flatMap(tr => tr.vulnerabilities)
+      updateScan(scan.id, {
+        score: null,
+        status: 'completed',
+        criticalCount: allVulns.filter(v => v.severity === 'CRITICAL').length,
+        highCount: allVulns.filter(v => v.severity === 'HIGH').length,
+        mediumCount: allVulns.filter(v => v.severity === 'MEDIUM').length,
+        lowCount: allVulns.filter(v => v.severity === 'LOW').length,
+      })
+    } catch (dbErr) {
+      // Database persistence is best-effort; don't fail the command
+      console.error('[vulnerabilities] Failed to persist results:', dbErr)
+    }
 
     // Map to output format
     let vulnerabilities = mapVulnerabilities(technologyResults)

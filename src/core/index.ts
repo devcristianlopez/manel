@@ -107,3 +107,13 @@ export {
   saveHardeningResults,
   getHardeningResultsByScanId,
 } from './database'
+
+// Database Cache
+export {
+  getCachedVersion,
+  setCachedVersion,
+  clearExpiredVersions,
+  getCachedVulnerabilities,
+  setCachedVulnerabilities,
+  clearExpiredVulnerabilities,
+} from './database/cache'

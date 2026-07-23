@@ -9,6 +9,7 @@
  */
 
 import type { SourceConfig } from '../types'
+import { getCachedVersion, setCachedVersion } from '../database/cache'
 
 // ============================================================================
 // 1. Constants
@@ -25,7 +26,10 @@ const REQUEST_TIMEOUT_MS = 8000
 // ============================================================================
 
 /**
- * In-memory cache for version query results with TTL.
+ * Version cache with SQLite persistence.
+ *
+ * In-memory cache for fast access, backed by SQLite for persistence
+ * across process restarts. TTL: 30 minutes in-memory, 24 hours in SQLite.
  */
 export class VersionCache {
   private cache = new Map<string, { version: string; timestamp: number }>()
@@ -41,31 +45,47 @@ export class VersionCache {
   /**
    * Get a cached version.
    *
+   * Checks in-memory first, then falls back to SQLite.
+   *
    * @param key - Technology name
    * @returns Cached version, or null if miss/expired
    */
   get(key: string): string | null {
+    // 1. Check in-memory cache
     const entry = this.cache.get(key)
-    if (!entry) return null
-    if (Date.now() - entry.timestamp > this.ttl) {
+    if (entry) {
+      if (Date.now() - entry.timestamp <= this.ttl) {
+        return entry.version
+      }
       this.cache.delete(key)
-      return null
     }
-    return entry.version
+
+    // 2. Fall back to SQLite
+    const dbVersion = getCachedVersion(key)
+    if (dbVersion !== null) {
+      // Warm the in-memory cache
+      this.cache.set(key, { version: dbVersion, timestamp: Date.now() })
+      return dbVersion
+    }
+
+    return null
   }
 
   /**
    * Store a version in the cache.
+   *
+   * Writes to both in-memory and SQLite.
    *
    * @param key - Technology name
    * @param version - Version string to cache
    */
   set(key: string, version: string): void {
     this.cache.set(key, { version, timestamp: Date.now() })
+    setCachedVersion(key, version)
   }
 
   /**
-   * Clear all cached entries.
+   * Clear all cached entries (in-memory only; SQLite entries expire naturally).
    */
   clear(): void {
     this.cache.clear()

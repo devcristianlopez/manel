@@ -22,8 +22,47 @@ import { registerSchemaCommand } from './commands/schema'
 import { getPackageVersion } from './version'
 import { stopActiveSpinner } from './spinner'
 
+// Database
+import { initDatabase, closeDatabase } from '../core/database'
+import { mkdirSync } from 'fs'
+import { homedir } from 'os'
+import { join } from 'path'
+
 // ============================================================================
-// 1. Program Setup
+// 1. Database Setup
+// ============================================================================
+
+/** Whether the database has been initialized in this process */
+let dbInitialized = false
+
+/**
+ * Initialize the SQLite database (idempotent).
+ *
+ * Path resolution order:
+ * 1. MANEL_DB_PATH environment variable (useful for tests)
+ * 2. ~/.manel/manel.db (default)
+ *
+ * Initialization failures are non-fatal: the CLI continues to work
+ * without persistence (caches degrade to in-memory only).
+ */
+function ensureDatabase(): void {
+  if (dbInitialized) return
+  dbInitialized = true
+
+  try {
+    const envPath = process.env.MANEL_DB_PATH
+    const dbPath = envPath ?? join(homedir(), '.manel', 'manel.db')
+    if (!envPath) {
+      mkdirSync(join(homedir(), '.manel'), { recursive: true })
+    }
+    initDatabase(dbPath)
+  } catch (err) {
+    console.error('[manel] Database initialization failed, persistence disabled:', err instanceof Error ? err.message : err)
+  }
+}
+
+// ============================================================================
+// 2. Program Setup
 // ============================================================================
 
 /**
@@ -32,6 +71,8 @@ import { stopActiveSpinner } from './spinner'
  * @returns Configured Commander.js program
  */
 function createProgram(): Command {
+  ensureDatabase()
+
   const program = new Command()
   const version = getPackageVersion()
 
@@ -53,7 +94,7 @@ function createProgram(): Command {
 }
 
 // ============================================================================
-// 2. Signal Handling
+// 3. Signal Handling
 // ============================================================================
 
 /**
@@ -63,17 +104,19 @@ function createProgram(): Command {
 function installSignalHandlers(): void {
   process.on('SIGINT', () => {
     stopActiveSpinner()
+    closeDatabase()
     process.exit(130) // Standard exit code for SIGINT
   })
 
   process.on('SIGTERM', () => {
     stopActiveSpinner()
+    closeDatabase()
     process.exit(143) // Standard exit code for SIGTERM
   })
 }
 
 // ============================================================================
-// 3. Main Execution
+// 4. Main Execution
 // ============================================================================
 
 /**
@@ -103,7 +146,7 @@ async function main(): Promise<void> {
 }
 
 // ============================================================================
-// 4. Exports
+// 5. Exports
 // ============================================================================
 
 // Export for programmatic use

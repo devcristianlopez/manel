@@ -24,6 +24,7 @@ import { Spinner, setActiveSpinner } from '../spinner'
 import { getPackageVersion } from '../version'
 import { getEcosystemName, shouldFailOnSeverity } from '../utils'
 import { internalError, formatErrorForStderr } from '../errors'
+import { createScan, updateScan, saveSoftware, saveVulnerabilities, saveHardeningResults } from '../../core/database'
 
 // ============================================================================
 // 1. Command Registration
@@ -116,6 +117,75 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
     // Step 4: Calculate score
     spinner.step('  Calculating security score...')
     const scoreBreakdown = calculateScoreBreakdown(technologyResults, hardeningChecks)
+
+    // Step 4b: Persist results to database
+    try {
+      const scan = createScan()
+
+      // Save software entries
+      const softwareRecords = saveSoftware(
+        softwareList.map(sw => ({
+          name: sw.name,
+          version: sw.version,
+          path: sw.path,
+          detectedAt: Math.floor(Date.now() / 1000),
+          scanId: scan.id,
+        }))
+      )
+
+      // Save vulnerabilities
+      for (const techResult of technologyResults) {
+        const softwareRecord = softwareRecords.find(r => r.name === techResult.name)
+        if (softwareRecord && techResult.vulnerabilities.length > 0) {
+          saveVulnerabilities(
+            techResult.vulnerabilities.map(v => ({
+              cve: v.cve,
+              severity: v.severity,
+              description: v.description,
+              softwareId: softwareRecord.id,
+              fixedVersion: v.fixedVersion,
+              source: v.source,
+            }))
+          )
+        }
+      }
+
+      // Save hardening results
+      if (hardeningChecks.length > 0) {
+        saveHardeningResults(
+          hardeningChecks.map(hc => ({
+            scanId: scan.id,
+            checkId: hc.checkId,
+            category: hc.category,
+            title: hc.title,
+            status: hc.status,
+            severity: hc.severity,
+            details: hc.details,
+          }))
+        )
+      }
+
+      // Update scan with final counts
+      updateScan(scan.id, {
+        score: scoreBreakdown.overall,
+        status: 'completed',
+        criticalCount: technologyResults.reduce(
+          (sum, tr) => sum + tr.vulnerabilities.filter(v => v.severity === 'CRITICAL').length, 0
+        ),
+        highCount: technologyResults.reduce(
+          (sum, tr) => sum + tr.vulnerabilities.filter(v => v.severity === 'HIGH').length, 0
+        ),
+        mediumCount: technologyResults.reduce(
+          (sum, tr) => sum + tr.vulnerabilities.filter(v => v.severity === 'MEDIUM').length, 0
+        ),
+        lowCount: technologyResults.reduce(
+          (sum, tr) => sum + tr.vulnerabilities.filter(v => v.severity === 'LOW').length, 0
+        ),
+      })
+    } catch (dbErr) {
+      // Database persistence is best-effort; don't fail the command
+      console.error('[scan] Failed to persist results:', dbErr)
+    }
 
     // Step 5: Build output data
     const outputData = buildScanOutputData(
