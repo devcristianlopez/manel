@@ -1,3 +1,5 @@
+## [1.1.0](https://github.com/devcristianlopez/manel/compare/v1.0.0...v1.1.0) (2026-07-23)
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
