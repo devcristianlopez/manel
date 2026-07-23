@@ -2,7 +2,7 @@
 
 Manel is a security CLI for development environments that locally scans installed software (OS, tools, languages, databases), queries known vulnerabilities from public sources (OSV, NVD, GitHub Advisories), and generates a Security Score (0-100) with actionable recommendations.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()

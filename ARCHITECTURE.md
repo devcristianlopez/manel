@@ -224,7 +224,7 @@ postgresql     15.4       red       PostgreSQL
     "tool": {
       "driver": {
         "name": "manel",
-        "version": "0.1.0",
+        "version": "1.0.0",
         "rules": [...]
       }
     },

@@ -52,7 +52,7 @@ When reporting, include:
 
 **Environment:**
 - OS: Ubuntu 24.04
-- Manel: 0.1.0
+- Manel: 1.0.0
 - Node: 22.x
 ```
 
