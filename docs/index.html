@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manel - Security Health Monitor for your development environment. Scan installed software, detect vulnerabilities, and monitor your security posture.">
+  <meta name="keywords" content="security, CLI, vulnerability scanner, npm, development tools, hardening">
+  <meta name="author" content="devcristianlopez">
+  <meta property="og:title" content="Manel - Security Health Monitor CLI">
+  <meta property="og:description" content="Scan your installed software, detect vulnerabilities, and monitor your security posture.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <title>Manel - Security Health Monitor CLI</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="nav container">
+      <a href="#" class="logo">
+        <span class="logo-icon">🛡️</span>
+        <span class="logo-text-en">Manel</span>
+        <span class="logo-text-es">Manel</span>
+      </a>
+
+      <button class="mobile-menu-btn" aria-label="Toggle menu">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#quickstart">Install</a></li>
+        <li><a href="#formats">Docs</a></li>
+        <li><a href="https://github.com/devcristianlopez/manel" target="_blank" rel="noopener">GitHub</a></li>
+        <li>
+          <div class="lang-toggle">
+            <button class="active" data-set-lang="en">EN</button>
+            <button data-set-lang="es">ES</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <span class="hero-badge">v1.0.0 • Open Source</span>
+      <h1>Security Health Monitor for Your Development Environment</h1>
+      <p class="hero-subtitle">Scan your installed software, detect vulnerabilities, and monitor your security posture — all from your terminal.</p>
+
+      <div class="hero-actions">
+        <div class="install-box">
+          <span class="prompt">$</span>
+          <code>npm install -g manel</code>
+          <button class="copy-btn" onclick="copyCommand('npm install -g manel')" aria-label="Copy install command">📋</button>
+        </div>
+        <a href="#quickstart" class="btn-primary">Get Started →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Powerful Security Features</h2>
+        <p>Everything you need to keep your development environment secure.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>Software Detection</h3>
+          <p>Detects 21 technologies: Node.js, Python, Docker, PostgreSQL, and more — including package managers, databases, and development tools.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Vulnerability Analysis</h3>
+          <p>Checks against OSV, NVD, and GHSA databases for known CVEs in your installed software stack.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Hardening Checks</h3>
+          <p>7 security checks for Linux: firewall status, SELinux, SSH configuration, kernel parameters, and more.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Security Score</h3>
+          <p>Weighted score combining all security aspects into one metric (0-100) with actionable recommendations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Output Formats Section -->
+  <section class="formats" id="formats">
+    <div class="container">
+      <div class="section-header">
+        <h2>Flexible Output Formats</h2>
+        <p>Choose the format that fits your workflow.</p>
+      </div>
+
+      <div class="formats-grid">
+        <div class="format-card">
+          <div class="format-name">table</div>
+          <p class="format-desc">Human-readable terminal output with colors and formatting.</p>
+          <span class="format-tag">Default</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">json</div>
+          <p class="format-desc">Pretty-printed JSON for scripts, APIs, and debugging.</p>
+          <span class="format-tag">Programmatic</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">sarif</div>
+          <p class="format-desc">Static Analysis Results Interchange Format for CI/CD integration.</p>
+          <span class="format-tag">CI/CD Ready</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">ndjson</div>
+          <p class="format-desc">Newline-delimited JSON for streaming and batch processing.</p>
+          <span class="format-tag">Streaming</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start Section -->
+  <section class="quickstart" id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <h2>Quick Start</h2>
+        <p>Get up and running in seconds.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span>terminal</span>
+          <button class="copy-btn" onclick="copyBlock('code-quickstart')" aria-label="Copy code">📋</button>
+        </div>
+        <pre class="code-body" id="code-quickstart"><span class="comment"># Install Manel globally</span>
+<span class="command">npm install -g manel</span>
+
+<span class="comment"># Scan your system</span>
+<span class="command">manel scan</span>
+
+<span class="comment"># Get JSON output</span>
+<span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">json</span>
+
+<span class="comment"># Check hardening status</span>
+<span class="command">manel hardening</span>
+
+<span class="comment"># View security score</span>
+<span class="command">manel score</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CI/CD Section -->
+  <section class="cicd" id="cicd">
+    <div class="container">
+      <div class="cicd-content">
+        <div class="cicd-text">
+          <h2>CI/CD Integration</h2>
+          <p>Integrate Manel into your pipelines for automated security checks on every commit.</p>
+          <ul class="cicd-list">
+            <li>GitHub Actions compatible</li>
+            <li>Fail builds on critical vulnerabilities</li>
+            <li>Upload SARIF to GitHub Code Scanning</li>
+            <li>Works with any CI/CD platform</li>
+          </ul>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>.github/workflows/security.yml</span>
+            <button class="copy-btn" onclick="copyBlock('code-cicd')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-cicd"><span class="comment"># GitHub Actions example</span>
+<span class="command">- name:</span> <span class="string">Security Scan</span>
+  <span class="command">run:</span> |
+    <span class="command">npm install -g manel</span>
+    <span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">sarif</span> \
+      <span class="flag">--output</span> <span class="string">scan.sarif</span> \
+      <span class="flag">--fail-on</span> <span class="string">critical</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="logo">
+          <span class="logo-icon">🛡️</span>
+          <span>Manel</span>
+        </div>
+
+        <ul class="footer-links">
+          <li><a href="https://github.com/devcristianlopez/manel" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/manel" target="_blank" rel="noopener">npm</a></li>
+          <li><a href="https://github.com/devcristianlopez/manel/blob/main/README.md" target="_blank" rel="noopener">Documentation</a></li>
+        </ul>
+
+        <p class="footer-bottom">MIT License • Built with <span>TypeScript</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Language toggle - navigate between pages
+    const langButtons = document.querySelectorAll('[data-set-lang]');
+
+    // Load saved language preference
+    const savedLang = localStorage.getItem('manel-lang') || 'en';
+
+    langButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.setLang;
+        localStorage.setItem('manel-lang', lang);
+        if (lang === 'es') {
+          window.location.href = 'es/index.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      });
+    });
+
+    // Mobile menu toggle
+    const mobileBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+    mobileBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+
+    // Copy to clipboard
+    function copyCommand(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        event.target.textContent = '✓';
+        setTimeout(() => { event.target.textContent = '📋'; }, 2000);
+      });
+    }
+
+    function copyBlock(id) {
+      const block = document.getElementById(id);
+      const text = block.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        event.target.textContent = '✓';
+        setTimeout(() => { event.target.textContent = '📋'; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Manel - Monitor de Salud de Seguridad para tu entorno de desarrollo. Escanea software instalado, detecta vulnerabilidades y monitorea tu postura de seguridad.">
+  <meta name="keywords" content="seguridad, CLI, escáner de vulnerabilidades, npm, herramientas de desarrollo, hardening">
+  <meta name="author" content="devcristianlopez">
+  <meta property="og:title" content="Manel - Monitor de Salud de Seguridad CLI">
+  <meta property="og:description" content="Escanea tu software instalado, detecta vulnerabilidades y monitorea tu postura de seguridad.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <title>Manel - Monitor de Salud de Seguridad CLI</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body class="lang-es">
+  <!-- Header -->
+  <header>
+    <nav class="nav container">
+      <a href="#" class="logo">
+        <span class="logo-icon">🛡️</span>
+        <span class="logo-text-es">Manel</span>
+        <span class="logo-text-en">Manel</span>
+      </a>
+
+      <button class="mobile-menu-btn" aria-label="Toggle menu">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#features">Características</a></li>
+        <li><a href="#quickstart">Instalar</a></li>
+        <li><a href="#formats">Docs</a></li>
+        <li><a href="https://github.com/devcristianlopez/manel" target="_blank" rel="noopener">GitHub</a></li>
+        <li>
+          <div class="lang-toggle">
+            <button data-set-lang="en">EN</button>
+            <button class="active" data-set-lang="es">ES</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <span class="hero-badge">v1.0.0 • Código Abierto</span>
+      <h1>Monitor de Salud de Seguridad para tu Entorno de Desarrollo</h1>
+      <p class="hero-subtitle">Escanea tu software instalado, detecta vulnerabilidades y monitorea tu postura de seguridad — todo desde tu terminal.</p>
+
+      <div class="hero-actions">
+        <div class="install-box">
+          <span class="prompt">$</span>
+          <code>npm install -g manel</code>
+          <button class="copy-btn" onclick="copyCommand('npm install -g manel')" aria-label="Copiar comando de instalación">📋</button>
+        </div>
+        <a href="#quickstart" class="btn-primary">Empieza Ahora →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Características de Seguridad Potentes</h2>
+        <p>Todo lo que necesitas para mantener tu entorno de desarrollo seguro.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>Detección de Software</h3>
+          <p>Detecta 21 tecnologías: Node.js, Python, Docker, PostgreSQL, y más — incluyendo gestores de paquetes, bases de datos y herramientas de desarrollo.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Análisis de Vulnerabilidades</h3>
+          <p>Consulta las bases de datos OSV, NVD y GHSA para CVEs conocidos en tu stack de software instalado.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Verificaciones de Hardening</h3>
+          <p>7 verificaciones de seguridad para Linux: estado del firewall, SELinux, configuración SSH, parámetros del kernel y más.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Score de Seguridad</h3>
+          <p>Score ponderado que combina todos los aspectos de seguridad en una métrica (0-100) con recomendaciones accionables.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Output Formats Section -->
+  <section class="formats" id="formats">
+    <div class="container">
+      <div class="section-header">
+        <h2>Formatos de Output Flexibles</h2>
+        <p>Elige el formato que mejor se adapte a tu flujo de trabajo.</p>
+      </div>
+
+      <div class="formats-grid">
+        <div class="format-card">
+          <div class="format-name">table</div>
+          <p class="format-desc">Output de terminal legible por humanos con colores y formato.</p>
+          <span class="format-tag">Por defecto</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">json</div>
+          <p class="format-desc">JSON formateado para scripts, APIs y debugging.</p>
+          <span class="format-tag">Programático</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">sarif</div>
+          <p class="format-desc">Static Analysis Results Interchange Format para integración CI/CD.</p>
+          <span class="format-tag">Listo para CI/CD</span>
+        </div>
+
+        <div class="format-card">
+          <div class="format-name">ndjson</div>
+          <p class="format-desc">JSON delimitado por saltos de línea para streaming y procesamiento por lotes.</p>
+          <span class="format-tag">Streaming</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start Section -->
+  <section class="quickstart" id="quickstart">
+    <div class="container">
+      <div class="section-header">
+        <h2>Inicio Rápido</h2>
+        <p>Comienza en segundos.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span>terminal</span>
+          <button class="copy-btn" onclick="copyBlock('code-quickstart')" aria-label="Copiar código">📋</button>
+        </div>
+        <pre class="code-body" id="code-quickstart"><span class="comment"># Instalar Manel globalmente</span>
+<span class="command">npm install -g manel</span>
+
+<span class="comment"># Escanear tu sistema</span>
+<span class="command">manel scan</span>
+
+<span class="comment"># Obtener output en JSON</span>
+<span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">json</span>
+
+<span class="comment"># Verificar estado de hardening</span>
+<span class="command">manel hardening</span>
+
+<span class="comment"># Ver score de seguridad</span>
+<span class="command">manel score</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CI/CD Section -->
+  <section class="cicd" id="cicd">
+    <div class="container">
+      <div class="cicd-content">
+        <div class="cicd-text">
+          <h2>Integración CI/CD</h2>
+          <p>Integra Manel en tus pipelines para verificaciones de seguridad automatizadas en cada commit.</p>
+          <ul class="cicd-list">
+            <li>Compatible con GitHub Actions</li>
+            <li>Falla builds en vulnerabilidades críticas</li>
+            <li>Sube SARIF a GitHub Code Scanning</li>
+            <li>Funciona con cualquier plataforma CI/CD</li>
+          </ul>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>.github/workflows/security.yml</span>
+            <button class="copy-btn" onclick="copyBlock('code-cicd')" aria-label="Copiar código">📋</button>
+          </div>
+          <pre class="code-body" id="code-cicd"><span class="comment"># Ejemplo de GitHub Actions</span>
+<span class="command">- name:</span> <span class="string">Security Scan</span>
+  <span class="command">run:</span> |
+    <span class="command">npm install -g manel</span>
+    <span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">sarif</span> \
+      <span class="flag">--output</span> <span class="string">scan.sarif</span> \
+      <span class="flag">--fail-on</span> <span class="string">critical</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="logo">
+          <span class="logo-icon">🛡️</span>
+          <span>Manel</span>
+        </div>
+
+        <ul class="footer-links">
+          <li><a href="https://github.com/devcristianlopez/manel" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/manel" target="_blank" rel="noopener">npm</a></li>
+          <li><a href="https://github.com/devcristianlopez/manel/blob/main/README.md" target="_blank" rel="noopener">Documentación</a></li>
+        </ul>
+
+        <p class="footer-bottom">Licencia MIT • Construido con <span>TypeScript</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Language toggle
+    const body = document.body;
+    const langButtons = document.querySelectorAll('[data-set-lang]');
+
+    // Load saved language
+    const savedLang = localStorage.getItem('manel-lang') || 'es';
+    updateActiveButton(savedLang);
+
+    langButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.setLang;
+        if (lang === 'es') {
+          window.location.href = '../es/index.html';
+        } else {
+          window.location.href = '../index.html';
+        }
+        localStorage.setItem('manel-lang', lang);
+      });
+    });
+
+    function updateActiveButton(lang) {
+      langButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.setLang === lang);
+      });
+    }
+
+    // Mobile menu toggle
+    const mobileBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+    mobileBtn.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+
+    // Copy commands
+    function copyCommand(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        event.target.textContent = '✓';
+        setTimeout(() => { event.target.textContent = '📋'; }, 2000);
+      });
+    }
+
+    function copyBlock(id) {
+      const block = document.getElementById(id);
+      const text = block.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        event.target.textContent = '✓';
+        setTimeout(() => { event.target.textContent = '📋'; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
