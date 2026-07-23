@@ -2,7 +2,7 @@
 
 Manel is a security CLI for development environments that locally scans installed software (OS, tools, languages, databases), queries known vulnerabilities from public sources (OSV, NVD, GitHub Advisories), and generates a Security Score (0-100) with actionable recommendations.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)]()
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()
@@ -300,6 +300,16 @@ The `schema` command generates a JSON describing the entire CLI interface, usefu
 ```bash
 manel schema | jq '.commands[] | .name'
 ```
+
+## Local Cache & Persistence
+
+Manel stores API responses and scan results in a local SQLite database at `~/.manel/manel.db`:
+
+- **Version cache** (24h TTL) — latest-version lookups skip the network on repeat runs
+- **Vulnerability cache** (24h TTL) — OSV/NVD/GHSA results cached per `ecosystem:package:version`, avoiding API rate limits
+- **Scan history** — every `scan`/`vulnerabilities` run persists detected software, findings, and score for auditing
+
+The first run queries external APIs; subsequent runs within 24h are network-free for cached data. Override the database location with the `MANEL_DB_PATH` environment variable (useful for tests and CI).
 
 ## Development
 
