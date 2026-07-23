@@ -1,0 +1,8 @@
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+exclude:
+  - node_modules
+  - coverage
+  - es
