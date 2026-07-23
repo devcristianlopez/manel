@@ -432,7 +432,37 @@ CREATE TABLE hardening_results (
   details     TEXT,                        -- Result details
   FOREIGN KEY (scan_id) REFERENCES scans(id)
 );
+
+-- Latest-version cache (avoids re-hitting version APIs)
+CREATE TABLE version_cache (
+  tech_name      TEXT PRIMARY KEY,         -- Technology name (node, npm, git, ...)
+  latest_version TEXT NOT NULL,
+  fetched_at     INTEGER NOT NULL          -- Unix ms; entries expire after 24h
+);
+
+-- Vulnerability query cache (avoids re-hitting OSV/NVD/GHSA)
+CREATE TABLE vulnerability_cache (
+  cache_key  TEXT PRIMARY KEY,             -- ecosystem:package:version
+  data       TEXT NOT NULL,                -- JSON array of CoreVulnerability
+  fetched_at INTEGER NOT NULL              -- Unix ms; entries expire after 24h
+);
 ```
+
+### Caching Strategy
+
+The CLI uses a **two-tier cache** for external API data:
+
+1. **In-memory** (fast path): versions 30 min, vulnerabilities 1 h
+2. **SQLite** (persistent): both 24 h, survives process restarts
+
+On a memory miss, caches fall back to SQLite and warm the memory entry on a
+hit. Results are only cached on successful queries; empty vulnerability
+results *are* cached (a clean package is a valid answer).
+
+The database path defaults to `~/.manel/manel.db` and can be overridden with
+the `MANEL_DB_PATH` environment variable (useful for tests). Initialization
+happens in `createProgram()`; failures are non-fatal — the CLI keeps working
+without persistence.
 
 ### Relationships
 
