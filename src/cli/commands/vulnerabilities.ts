@@ -114,7 +114,7 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
 
     // Format output
     const formattedOutput = formatOutput(
-      { vulnerabilities },
+      { vulnerabilities } as any,
       format,
       { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )

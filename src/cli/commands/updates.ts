@@ -93,7 +93,7 @@ export async function executeUpdatesCommand(options: CommonFlags): Promise<numbe
 
     // Format output
     const formattedOutput = formatOutput(
-      { updates },
+      { updates } as any,
       format,
       { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )

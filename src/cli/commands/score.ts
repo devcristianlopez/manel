@@ -113,7 +113,7 @@ export async function executeScoreCommand(options: CommonFlags): Promise<number>
 
     // Format output
     const formattedOutput = formatOutput(
-      { score },
+      { score } as any,
       format,
       { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )

@@ -88,7 +88,7 @@ export async function executeHardeningCommand(options: CommonFlags): Promise<num
 
     // Format output
     const formattedOutput = formatOutput(
-      { hardening: [hardeningResult] },
+      { hardening: [hardeningResult] } as any,
       format,
       { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )

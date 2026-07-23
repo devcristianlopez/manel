@@ -16,7 +16,52 @@ import { getPackageVersion } from '../version'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
-// 1. Command Registration
+// 1. Command Examples (stored for schema generation)
+// ============================================================================
+
+/** Pre-defined examples per command. Used by schema generation. */
+const COMMAND_EXAMPLES: Record<string, string[]> = {
+  status: [
+    'manel status',
+    'manel status --format json',
+    'manel status --format sarif --output status.sarif',
+  ],
+  scan: [
+    'manel scan',
+    'manel scan --format json',
+    'manel scan --format sarif --output scan.sarif',
+    'manel scan --severity HIGH,CRITICAL',
+    'manel scan --fail-on critical --no-color',
+  ],
+  vulnerabilities: [
+    'manel vulnerabilities',
+    'manel vulns --format json',
+    'manel vulns --severity CRITICAL',
+    'manel vulns --fail-on high --output vulns.json',
+  ],
+  hardening: [
+    'manel hardening',
+    'manel hardening --format json',
+    'manel hardening --format sarif --output hardening.sarif',
+  ],
+  score: [
+    'manel score',
+    'manel score --format json',
+    'manel score --format sarif --output score.sarif',
+  ],
+  updates: [
+    'manel updates',
+    'manel updates --format json',
+    'manel updates --format table --output updates.txt',
+  ],
+  schema: [
+    'manel schema',
+    'manel schema --output schema.json',
+  ],
+}
+
+// ============================================================================
+// 2. Command Registration
 // ============================================================================
 
 /**
@@ -40,7 +85,7 @@ Examples:
 }
 
 // ============================================================================
-// 2. Command Execution
+// 3. Command Execution
 // ============================================================================
 
 /**
@@ -89,7 +134,7 @@ export async function executeSchemaCommand(
 }
 
 // ============================================================================
-// 3. Schema Generation (Auto-generated from Commander program)
+// 4. Schema Generation (Auto-generated from Commander program)
 // ============================================================================
 
 /**
@@ -122,7 +167,7 @@ function generateCliSchemaFromProgram(program: Command): ToolSchema {
         }
         return flag
       }),
-      examples: extractExamples(cmd),
+      examples: COMMAND_EXAMPLES[cmd.name()] ?? [],
     })),
     globalFlags: [
       { name: '--format', short: '-f', description: 'Output format', type: 'enum', required: false, default: 'table', enum: ['json', 'sarif', 'table', 'ndjson'] },
@@ -132,45 +177,4 @@ function generateCliSchemaFromProgram(program: Command): ToolSchema {
       { name: '--verbose', short: '-V', description: 'Enable verbose output', type: 'boolean', required: false },
     ],
   }
-}
-
-/**
- * Extract example commands from a command's help text.
- * Parses the .addHelpText('after', ...) content for lines starting with '$'.
- *
- * @param cmd - Commander.js command
- * @returns Array of example strings
- */
-function extractExamples(cmd: Command): string[] {
-  const examples: string[] = []
-
-  // Commander v15 uses events for addHelpText content.
-  // Capture the afterHelp event output to get appended help text.
-  let helpText = ''
-  const listeners = cmd.rawListeners('afterHelp')
-  for (const listener of listeners) {
-    let captured = ''
-    const context = {
-      error: false,
-      command: cmd,
-      write: (text: string) => { captured += text },
-    }
-    try {
-      listener(context)
-    } catch {
-      // Ignore errors from help text rendering
-    }
-    helpText += captured
-  }
-
-  // Look for lines starting with "$ "
-  const lines = helpText.split('\n')
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed.startsWith('$ ')) {
-      examples.push(trimmed.substring(2))
-    }
-  }
-
-  return examples
 }

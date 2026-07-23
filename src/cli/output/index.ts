@@ -84,7 +84,7 @@ export type FormatterData =
   | OutputHardeningResult[]
   | OutputSecurityScore
   | UpdateInfo[]
-  | Record<string, unknown>
+
 
 /**
  * Format data in the specified output format.
@@ -185,7 +185,7 @@ function toPartialScanResult(data: FormatterData): OutputScanResult {
 
   // Populate fields that are present in the data
   if (typeof data === 'object' && data !== null) {
-    const obj = data as Record<string, unknown>
+    const obj = data as unknown as Record<string, unknown>
 
     if ('technologies' in obj && Array.isArray(obj.technologies)) {
       result.technologies = obj.technologies as OutputScanResult['technologies']

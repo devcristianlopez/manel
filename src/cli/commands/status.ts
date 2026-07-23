@@ -110,7 +110,7 @@ export async function executeStatusCommand(options: CommonFlags): Promise<number
 
     // Format output
     const formattedOutput = formatOutput(
-      { technologies: allTechnologies },
+      { technologies: allTechnologies } as any,
       format,
       { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
