@@ -1,94 +1,94 @@
 # Contributing to Manel
 
-Gracias por tu interés en contribuir a Manel. Este documento describe los estándares y procesos para contribuir al proyecto.
+Thank you for your interest in contributing to Manel. This document describes the standards and processes for contributing to the project.
 
-## Tabla de contenidos
+## Table of contents
 
-- [Código de conducta](#código-de-conducta)
-- [Reportar bugs](#reportar-bugs)
-- [Sugerir features](#sugerir-features)
-- [Entorno de desarrollo](#entorno-de-desarrollo)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Scripts disponibles](#scripts-disponibles)
-- [Estándares de código](#estándares-de-código)
-- [Proceso de PR](#proceso-de-pr)
-- [Guía de commits](#guía-de-commits)
-- [Documentación](#documentación)
+- [Code of conduct](#code-of-conduct)
+- [Reporting bugs](#reporting-bugs)
+- [Suggesting features](#suggesting-features)
+- [Development environment](#development-environment)
+- [Project structure](#project-structure)
+- [Available scripts](#available-scripts)
+- [Code standards](#code-standards)
+- [PR process](#pr-process)
+- [Commit guide](#commit-guide)
+- [Documentation](#documentation)
 
-## Código de conducta
+## Code of conduct
 
-Este proyecto se rige por un código de conducta basado en el respeto mutuo. No se tolera discriminación, acoso ni ningún tipo de conducta que genere un entorno hostil. Al participar, aceptas mantener un ambiente colaborativo y profesional.
+This project is governed by a code of conduct based on mutual respect. Discrimination, harassment, or any conduct that creates a hostile environment is not tolerated. By participating, you agree to maintain a collaborative and professional environment.
 
-## Reportar bugs
+## Reporting bugs
 
-Antes de reportar un bug:
+Before reporting a bug:
 
-1. Verifica que no exista ya un issue abierto para el mismo problema.
-2. Asegúrate de estar usando la última versión.
-3. Comprueba si el problema persiste tras reiniciar la aplicación.
+1. Check that there isn't already an open issue for the same problem.
+2. Make sure you are using the latest version.
+3. Check if the problem persists after restarting the application.
 
-Al reportar, incluye:
+When reporting, include:
 
-- **Título descriptivo**: Resume el problema en una línea.
-- **Pasos para reproducir**: Secuencia exacta desde un estado inicial conocido.
-- **Comportamiento esperado**: Qué debería ocurrir.
-- **Comportamiento actual**: Qué ocurre realmente.
-- **Entorno**:
-  - Sistema operativo y versión.
-  - Versión de Manel (`manel --version`).
-  - Versión de Node.js y npm.
-- **Logs**: Captura la salida de la terminal con `--verbose`.
-- **Evidencia**: Capturas de pantalla o vídeo si aplica.
+- **Descriptive title**: Summarize the problem in one line.
+- **Steps to reproduce**: Exact sequence from a known initial state.
+- **Expected behavior**: What should happen.
+- **Actual behavior**: What actually happens.
+- **Environment**:
+  - Operating system and version.
+  - Manel version (`manel --version`).
+  - Node.js and npm version.
+- **Logs**: Capture terminal output with `--verbose`.
+- **Evidence**: Screenshots or video if applicable.
 
 ```
-### Bug: [Título breve]
+### Bug: [Brief title]
 
-**Pasos:**
-1. Ejecutar `manel scan`
+**Steps:**
+1. Run `manel scan`
 2. ...
 
-**Esperado:** ...
+**Expected:** ...
 **Actual:** ...
 
-**Entorno:**
+**Environment:**
 - OS: Ubuntu 24.04
 - Manel: 0.1.0
 - Node: 22.x
 ```
 
-## Sugerir features
+## Suggesting features
 
-Antes de proponer una funcionalidad nueva:
+Before proposing a new feature:
 
-1. Revisa los issues existentes para evitar duplicados.
-2. Considera si la funcionalidad es de interés general o muy específica de tu caso.
-3. Piensa en cómo se integraría con la arquitectura actual (CLI + Core).
+1. Check existing issues to avoid duplicates.
+2. Consider if the feature is of general interest or very specific to your use case.
+3. Think about how it would integrate with the current architecture (CLI + Core).
 
-Al proponer, incluye:
+When proposing, include:
 
-- **Problema que resuelve**: ¿Qué necesidad cubre?
-- **Comportamiento esperado**: Describe la feature en detalle.
-- **Alternativas consideradas**: Si hay otras formas de resolverlo.
-- **Impacto**: ¿Afecta rendimiento, seguridad, compatibilidad?
+- **Problem it solves**: What need does it address?
+- **Expected behavior**: Describe the feature in detail.
+- **Alternatives considered**: If there are other ways to solve it.
+- **Impact**: Does it affect performance, security, compatibility?
 
 ```
-### Feature: [Nombre]
+### Feature: [Name]
 
-**Problema:** ...
-**Solución propuesta:** ...
-**Alternativas:** ...
+**Problem:** ...
+**Proposed solution:** ...
+**Alternatives:** ...
 ```
 
-## Entorno de desarrollo
+## Development environment
 
-### Requisitos
+### Requirements
 
-- Node.js 18 o superior (recomendado 20+).
-- npm 9+ (o yarn/pnpm).
+- Node.js 18 or higher (20+ recommended).
+- npm 9+ (or yarn/pnpm).
 - Git.
-- Linux o macOS (hardening checks solo funcionan en Linux).
+- Linux or macOS (hardening checks only work on Linux).
 
-### Setup inicial
+### Initial setup
 
 ```bash
 git clone https://github.com/devcristianlopez/manel.git
@@ -97,34 +97,34 @@ npm install
 npm run build:cli
 ```
 
-### Ejecutar en desarrollo
+### Running in development
 
 ```bash
-# Compilar y ejecutar
+# Build and run
 npm run build:cli
 node bin/manel-cli.js scan
 
-# O usar npm link para tener `manel` disponible globalmente
+# Or use npm link to have `manel` available globally
 npm run global-link
 manel scan
 ```
 
-### Ejecutar tests
+### Running tests
 
 ```bash
-npm test                      # Todos los tests
-npx vitest run                # Alternativa
-npx vitest --watch            # Modo watch
-npm run test:coverage         # Con cobertura
+npm test                      # All tests
+npx vitest run                # Alternative
+npx vitest --watch            # Watch mode
+npm run test:coverage         # With coverage
 ```
 
-### Verificación de tipos
+### Type checking
 
 ```bash
-npm run lint                  # Ejecuta tsc --noEmit
+npm run lint                  # Runs tsc --noEmit
 ```
 
-## Estructura del proyecto
+## Project structure
 
 ```
 manel/
@@ -132,7 +132,7 @@ manel/
 │   └── manel-cli.js           # Entry point (Node.js)
 ├── src/
 │   ├── cli/                   # CLI framework
-│   │   ├── commands/          # Implementación de comandos
+│   │   ├── commands/          # Command implementations
 │   │   │   ├── status.ts      # `manel status`
 │   │   │   ├── scan.ts        # `manel scan`
 │   │   │   ├── vulnerabilities.ts  # `manel vulnerabilities`
@@ -140,78 +140,78 @@ manel/
 │   │   │   ├── score.ts       # `manel score`
 │   │   │   ├── updates.ts     # `manel updates`
 │   │   │   └── schema.ts      # `manel schema`
-│   │   ├── output/            # Formateadores de salida
+│   │   ├── output/            # Output formatters
 │   │   │   ├── table-formatter.ts
 │   │   │   ├── json-formatter.ts
 │   │   │   ├── sarif-formatter.ts
 │   │   │   └── ndjson-formatter.ts
-│   │   ├── flags.ts           # Flags compartidos
-│   │   ├── errors.ts          # Manejo de errores
-│   │   └── index.ts           # Entry point principal
-│   ├── core/                  # Lógica de negocio
-│   │   ├── scanner/           # Detección de software
-│   │   ├── security/          # Motor de seguridad
-│   │   ├── update-engine/     # Consulta de versiones
-│   │   ├── database/          # Persistencia SQLite
+│   │   ├── flags.ts           # Shared flags
+│   │   ├── errors.ts          # Error handling
+│   │   └── index.ts           # Main entry point
+│   ├── core/                  # Business logic
+│   │   ├── scanner/           # Software detection
+│   │   ├── security/          # Security engine
+│   │   ├── update-engine/     # Version checking
+│   │   ├── database/          # SQLite persistence
 │   │   └── index.ts           # Barrel export
 │   └── shared/
-│       └── types.ts           # Tipos compartidos
+│       └── types.ts           # Shared types
 ├── package.json
-├── tsconfig.json              # Config TypeScript base
-├── tsconfig.cli.json          # Config TypeScript para CLI
-├── vitest.config.ts           # Config de tests
+├── tsconfig.json              # Base TypeScript config
+├── tsconfig.cli.json          # TypeScript config for CLI
+├── vitest.config.ts           # Test config
 └── CONTRIBUTING.md
 ```
 
-### Módulos clave
+### Key modules
 
-| Módulo | Responsabilidad |
-|--------|-----------------|
-| `cli/commands/` | Un archivo por comando, cada uno exporta `registerXCommand()` |
-| `cli/output/` | Un formateador por formato (table, json, sarif, ndjson) |
-| `core/scanner/` | Detección de software via `execSync()` |
-| `core/security/` | Consulta de vulnerabilidades y hardening |
-| `core/update-engine/` | Consulta de últimas versiones |
-| `core/database/` | Operaciones SQLite |
-| `shared/types.ts` | Tipos TypeScript compartidos |
+| Module | Responsibility |
+|--------|----------------|
+| `cli/commands/` | One file per command, each exports `registerXCommand()` |
+| `cli/output/` | One formatter per format (table, json, sarif, ndjson) |
+| `core/scanner/` | Software detection via `execSync()` |
+| `core/security/` | Vulnerability and hardening queries |
+| `core/update-engine/` | Latest version checking |
+| `core/database/` | SQLite operations |
+| `shared/types.ts` | Shared TypeScript types |
 
-## Scripts disponibles
+## Available scripts
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm run build:cli` | Compilar TypeScript a JavaScript |
-| `npm run global-link` | Instalar `manel` globalmente via npm link |
-| `npm test` | Ejecutar suite de tests (Vitest) |
-| `npm run test:watch` | Tests en modo watch |
-| `npm run test:coverage` | Tests con reporte de cobertura |
-| `npm run lint` | Verificación de tipos TypeScript |
+| `npm run build:cli` | Compile TypeScript to JavaScript |
+| `npm run global-link` | Install `manel` globally via npm link |
+| `npm test` | Run test suite (Vitest) |
+| `npm run test:watch` | Tests in watch mode |
+| `npm run test:coverage` | Tests with coverage report |
+| `npm run lint` | TypeScript type checking |
 
-## Estándares de código
+## Code standards
 
 ### TypeScript
 
-- **strict mode**: El proyecto usa `strict: false` en `tsconfig.cli.json` por compatibilidad. Si contribuyes, evita `any` cuando sea posible.
-- **Tipado explícito**: Funciones públicas deben tener tipos de retorno explícitos.
-- **Tipos compartidos**: Los tipos usados por CLI y Core van en `src/shared/types.ts`.
-- **Null safety**: Prefiere `T | null` sobre `T | undefined`. Usa `??` en lugar de `||`.
+- **strict mode**: The project uses `strict: false` in `tsconfig.cli.json` for compatibility. If contributing, avoid `any` when possible.
+- **Explicit typing**: Public functions must have explicit return types.
+- **Shared types**: Types used by CLI and Core go in `src/shared/types.ts`.
+- **Null safety**: Prefer `T | null` over `T | undefined`. Use `??` instead of `||`.
 
-### Estilo
+### Style
 
-- **Indentación**: 2 espacios.
-- **Comillas**: Simples (`'`) en TypeScript/JavaScript.
-- **Punto y coma**: Obligatorio al final de cada sentencia.
-- **Nombres**: `camelCase` para variables y funciones, `PascalCase` para clases/tipos, `UPPER_CASE` para constantes.
-- **Límite de línea**: 120 caracteres.
+- **Indentation**: 2 spaces.
+- **Quotes**: Single quotes (`'`) in TypeScript/JavaScript.
+- **Semicolons**: Required at the end of each statement.
+- **Naming**: `camelCase` for variables and functions, `PascalCase` for classes/types, `UPPER_CASE` for constants.
+- **Line limit**: 120 characters.
 
 ### Commander.js
 
-- Cada comando se registra con `registerXCommand(program)`.
-- Usa las opciones de `flags.ts` para flags compartidos.
-- El handler recibe `CommonFlags` como tipo.
-- Retorna un exit code numérico (0, 1, 2, 3).
+- Each command is registered with `registerXCommand(program)`.
+- Use options from `flags.ts` for shared flags.
+- The handler receives `CommonFlags` as type.
+- Returns a numeric exit code (0, 1, 2, 3).
 
 ```typescript
-// Ejemplo de patrón de comando
+// Command pattern example
 export function registerMyCommand(program: Command): void {
   program
     .command('my-command')
@@ -224,82 +224,82 @@ export function registerMyCommand(program: Command): void {
 }
 
 async function executeMyCommand(options: CommonFlags): Promise<number> {
-  // Implementación
+  // Implementation
   return 0
 }
 ```
 
 ### Output Engine
 
-- Cada formateador implementa `FormatterFn<T>`.
-- Usa `FormatOptions` para controlar colores, pretty-print, etc.
-- El output va a stdout, los errores a stderr.
+- Each formatter implements `FormatterFn<T>`.
+- Use `FormatOptions` to control colors, pretty-print, etc.
+- Output goes to stdout, errors to stderr.
 
-### Buenas prácticas
+### Best practices
 
-- **Funciones puras**: Prefiere funciones sin efectos secundarios en Core.
-- **Error handling**: Usa try/catch en handlers de comandos. Nunca dejes que una excepción crashee la app.
-- **Fetch con timeout**: Todas las llamadas HTTP deben tener timeout (usa `AbortController`).
-- **Logs significativos**: Usa `console.error` con prefijo del módulo para stderr, `console.log` para stdout.
-- **Exit codes**: Respeta los códigos de salida semánticos (0=éxito, 1=hallazgos, 2=error, 3=input inválido).
+- **Pure functions**: Prefer functions without side effects in Core.
+- **Error handling**: Use try/catch in command handlers. Never let an exception crash the app.
+- **Fetch with timeout**: All HTTP calls must have a timeout (use `AbortController`).
+- **Meaningful logs**: Use `console.error` with module prefix for stderr, `console.log` for stdout.
+- **Exit codes**: Respect semantic exit codes (0=success, 1=findings, 2=error, 3=invalid input).
 
-## Proceso de PR
+## PR process
 
-### Paso a paso
+### Step by step
 
-1. **Fork** el repositorio (si aplica) o crea una rama desde `main`.
-2. **Crea una rama** con nombre descriptivo:
-   - `feat/nombre-de-la-feature`
-   - `fix/nombre-del-bug`
-   - `docs/nombre-del-cambio`
-   - `refactor/nombre`
-3. **Desarrolla** siguiendo los estándares de código.
-4. **Compila** el CLI: `npm run build:cli`
-5. **Ejecuta los tests**: `npm test`
-6. **Verifica tipos**: `npm run lint`
-7. **Actualiza documentación** si tu cambio afecta la API, arquitectura o comportamiento.
-8. **Haz commit** siguiendo la guía de commits.
-9. **Push** a tu rama.
-10. **Abre un Pull Request** contra `main`.
+1. **Fork** the repository (if applicable) or create a branch from `main`.
+2. **Create a branch** with a descriptive name:
+   - `feat/feature-name`
+   - `fix/bug-name`
+   - `docs/change-name`
+   - `refactor/name`
+3. **Develop** following the code standards.
+4. **Build** the CLI: `npm run build:cli`
+5. **Run the tests**: `npm test`
+6. **Check types**: `npm run lint`
+7. **Update documentation** if your change affects the API, architecture, or behavior.
+8. **Commit** following the commit guide.
+9. **Push** to your branch.
+10. **Open a Pull Request** against `main`.
 
-### Template de PR
+### PR template
 
 ```markdown
-## Descripción
+## Description
 
-[Descripción del cambio]
+[Description of the change]
 
-## Tipo de cambio
+## Type of change
 
 - [ ] Bug fix
-- [ ] Nueva feature
+- [ ] New feature
 - [ ] Refactor
-- [ ] Documentación
-- [ ] Dependencias
+- [ ] Documentation
+- [ ] Dependencies
 
-## ¿Cómo se probó?
+## How was it tested?
 
-[Descripción de las pruebas realizadas]
+[Description of tests performed]
 
 ## Checklist
 
-- [ ] El código sigue los estándares del proyecto
-- [ ] Se ejecutó `npm run build:cli` sin errores
-- [ ] Los tests pasan (`npm test`)
+- [ ] Code follows project standards
+- [ ] `npm run build:cli` ran without errors
+- [ ] Tests pass (`npm test`)
 - [ ] Type checking OK (`npm run lint`)
-- [ ] Se actualizó la documentación si aplica
-- [ ] No se introdujeron dependencias nuevas sin revisión
+- [ ] Documentation updated if applicable
+- [ ] No new dependencies introduced without review
 ```
 
-### Revisión
+### Review
 
-- Un mantenedor revisará el PR en un plazo razonable.
-- Se pueden solicitar cambios. Por favor, responde a los comentarios.
-- Una vez aprobado, se mergea a `main`.
+- A maintainer will review the PR within a reasonable timeframe.
+- Changes may be requested. Please respond to comments.
+- Once approved, it will be merged into `main`.
 
-## Guía de commits
+## Commit guide
 
-Usa mensajes descriptivos en inglés:
+Use descriptive messages in English:
 
 ```
 feat(scanner): add support for Rust detection
@@ -308,40 +308,40 @@ docs(architecture): update CLI architecture diagram
 refactor(score): extract category calculation
 ```
 
-Formato recomendado:
+Recommended format:
 
 ```
-<tipo>(<ámbito>): <descripción>
+<type>(<scope>): <description>
 
-- <detalle opcional>
+- <optional detail>
 ```
 
-Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`.
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`.
 
-## Documentación
+## Documentation
 
-- **README.md**: Documentación general del proyecto (instalación, uso, comandos).
-- **ARCHITECTURE.md**: Documentación técnica detallada (arquitectura, tipos, decisiones).
-- **CONTRIBUTING.md**: Esta guía.
-- **Código**: Los cambios que introducen nuevas funcionalidades o modifican el comportamiento existente deben incluir la documentación correspondiente en el mismo PR.
+- **README.md**: General project documentation (installation, usage, commands).
+- **ARCHITECTURE.md**: Detailed technical documentation (architecture, types, decisions).
+- **CONTRIBUTING.md**: This guide.
+- **Code**: Changes that introduce new features or modify existing behavior must include corresponding documentation in the same PR.
 
 ## Tests
 
-- Los tests existentes están en `src/core/__tests__/`, `src/cli/__tests__/`, `src/cli/commands/__tests__/` y `src/cli/output/__tests__/`.
-- Si agregas un módulo nuevo, incluye tests unitarios.
-- Para funcionalidades de CLI, prioriza tests de integración que verifiquen el output.
+- Existing tests are in `src/core/__tests__/`, `src/cli/__tests__/`, `src/cli/commands/__tests__/`, and `src/cli/output/__tests__/`.
+- If you add a new module, include unit tests.
+- For CLI features, prioritize integration tests that verify the output.
 
-### Ejecutar tests específicos
+### Running specific tests
 
 ```bash
-# Tests de un módulo específico
+# Tests for a specific module
 npx vitest run src/core/security
 npx vitest run src/cli/commands
 
-# Test individual
+# Individual test
 npx vitest run src/cli/output/json-formatter.test.ts
 ```
 
-## Preguntas
+## Questions
 
-Si tienes dudas, abre un issue con la etiqueta `question`. Para discusiones técnicas más profundas, menciona a los mantenedores en el issue.
+If you have questions, open an issue with the `question` label. For deeper technical discussions, mention the maintainers in the issue.

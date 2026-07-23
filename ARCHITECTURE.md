@@ -1,10 +1,10 @@
 # Architecture — Manel
 
-## Descripción General
+## Overview
 
-Manel es un CLI de seguridad para entornos de desarrollo, escrito en TypeScript. Escanea localmente el software instalado, consulta vulnerabilidades en fuentes públicas y genera un Security Score con recomendaciones accionables.
+Manel is a security CLI for development environments, written in TypeScript. It locally scans installed software, queries vulnerabilities from public sources, and generates a Security Score with actionable recommendations.
 
-## Arquitectura CLI
+## CLI Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -30,10 +30,10 @@ Manel es un CLI de seguridad para entornos de desarrollo, escrito en TypeScript.
 │                        Core Layer                           │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  src/core/                                           │  │
-│  │  ├── scanner/     (detección de software)            │  │
-│  │  ├── security/    (análisis de vulnerabilidades)     │  │
-│  │  ├── update-engine/ (consulta de versiones)          │  │
-│  │  └── database/    (persistencia SQLite)              │  │
+│  │  ├── scanner/     (software detection)               │  │
+│  │  ├── security/    (vulnerability analysis)           │  │
+│  │  ├── update-engine/ (version checking)               │  │
+│  │  └── database/    (SQLite persistence)               │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -42,12 +42,12 @@ Manel es un CLI de seguridad para entornos de desarrollo, escrito en TypeScript.
 │                      Shared Layer                           │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  src/shared/types.ts                                 │  │
-│  │  (Tipos compartidos entre CLI y Core)                │  │
+│  │  (Shared types between CLI and Core)                 │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Flujo de Datos
+## Data Flow
 
 ```
 Terminal
@@ -60,7 +60,7 @@ bin/manel-cli.js
   ▼
 src/cli/index.ts (Commander.js)
   │
-  ├── Parse flags y opciones
+  ├── Parse flags and options
   │
   ▼
 commands/scan.ts
@@ -68,61 +68,61 @@ commands/scan.ts
   ├── 1. detectAll() ──────────────────────► scanner/
   │      (Node.js, npm, Python, etc.)           │
   │                                              ▼
-  │                                    execSync() para detectar
-  │                                    versiones instaladas
+  │                                    execSync() to detect
+  │                                    installed versions
   │
   ├── 2. analyzeAllTechnologies() ────────► security/
-  │      (Consultar vulnerabilidades)            │
+  │      (Query vulnerabilities)                 │
   │                                              ├── queryOSV()
   │                                              ├── queryNVD()
   │                                              └── queryGitHubAdvisory()
   │
   ├── 3. runHardeningChecks() ────────────► security/hardening.ts
-  │      (Linux hardening checks)               │
+  │      (Linux hardening checks)                │
   │                                              ▼
   │                                    Firewall, SELinux, SSH, etc.
   │
   ├── 4. calculateScoreBreakdown() ───────► security/score-engine.ts
-  │      (Calcular Security Score)              │
+  │      (Calculate Security Score)              │
   │
   └── 5. formatOutput() ─────────────────► output/
-         (Table, JSON, SARIF, NDJSON)          │
-                                               ▼
-                                    stdout / archivo
+         (Table, JSON, SARIF, NDJSON)           │
+                                                ▼
+                                     stdout / file
 ```
 
-## Módulos
+## Modules
 
 ### CLI Layer (`src/cli/`)
 
-Responsable de la interfaz de línea de comandos.
+Responsible for the command-line interface.
 
-| Módulo | Responsabilidad |
-|--------|-----------------|
-| `index.ts` | Configuración de Commander.js, registro de comandos |
-| `commands/` | Implementación de cada comando (`status`, `scan`, etc.) |
-| `output/` | Formateadores de salida (table, json, sarif, ndjson) |
-| `flags.ts` | Definición y validación de flags compartidos |
-| `errors.ts` | Manejo de errores y códigos de salida |
+| Module | Responsibility |
+|--------|----------------|
+| `index.ts` | Commander.js setup, command registration |
+| `commands/` | Implementation of each command (`status`, `scan`, etc.) |
+| `output/` | Output formatters (table, json, sarif, ndjson) |
+| `flags.ts` | Shared flags definition and validation |
+| `errors.ts` | Error handling and exit codes |
 
 ### Core Layer (`src/core/`)
 
-Lógica de negocio framework-agnostic.
+Framework-agnostic business logic.
 
-| Módulo | Responsabilidad |
-|--------|-----------------|
-| `scanner/` | Detección de software instalado via CLI |
-| `security/` | Análisis de vulnerabilidades y hardening |
-| `update-engine/` | Consulta de últimas versiones desde fuentes externas |
-| `database/` | Persistencia de resultados en SQLite |
+| Module | Responsibility |
+|--------|----------------|
+| `scanner/` | Software detection via CLI commands |
+| `security/` | Vulnerability analysis and hardening |
+| `update-engine/` | Latest version checking from external sources |
+| `database/` | SQLite result persistence |
 
 ### Shared Layer (`src/shared/`)
 
-Tipos y utilidades compartidas.
+Shared types and utilities.
 
-| Módulo | Responsabilidad |
-|--------|-----------------|
-| `types.ts` | Tipos TypeScript para todo el proyecto |
+| Module | Responsibility |
+|--------|----------------|
+| `types.ts` | TypeScript types for the entire project |
 
 ## Commander.js Structure
 
@@ -133,7 +133,7 @@ const program = new Command()
   .description('Security Health Monitor for development environments')
   .version(version)
 
-// Registro de comandos
+// Command registration
 registerStatusCommand(program)
 registerScanCommand(program)
 registerVulnerabilitiesCommand(program)
@@ -145,7 +145,7 @@ registerSchemaCommand(program)
 
 ### Command Pattern
 
-Cada comando sigue el mismo patrón:
+Each command follows the same pattern:
 
 ```typescript
 // src/cli/commands/scan.ts
@@ -169,7 +169,7 @@ export function registerScanCommand(program: Command): void {
 
 ## Output Engine
 
-### Formato Table (default)
+### Table Format (default)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -185,7 +185,7 @@ python         3.12.1     yellow    PyPI
 postgresql     15.4       red       PostgreSQL
 ```
 
-### Formato JSON
+### JSON Format
 
 ```json
 {
@@ -214,7 +214,7 @@ postgresql     15.4       red       PostgreSQL
 }
 ```
 
-### Formato SARIF
+### SARIF Format
 
 ```json
 {
@@ -233,7 +233,7 @@ postgresql     15.4       red       PostgreSQL
 }
 ```
 
-### Formato NDJSON
+### NDJSON Format
 
 ```json
 {"type":"technology","name":"node","version":"20.10.0","ecosystem":"npm"}
@@ -243,7 +243,7 @@ postgresql     15.4       red       PostgreSQL
 {"type":"meta","timestamp":"2026-07-22T10:00:00Z","totalTechnologies":15}
 ```
 
-## Tipos Principales
+## Core Types
 
 ### ResponseEnvelope
 
@@ -306,21 +306,21 @@ interface Vulnerability {
 
 ## Security Score
 
-### Ponderación
+### Weighting
 
-| Categoría | Peso | Fuente |
-|-----------|------|--------|
-| Sistema Operativo | 15% | Detección + endoflife.date |
-| Hardening | 15% | 7 checks de seguridad Linux |
-| Herramientas | 10% | Git, Docker, VS Code |
-| Dependencias | 30% | Node.js, Python, Java |
-| Bases de Datos | 10% | PostgreSQL, MySQL, MongoDB, Redis |
-| Vulnerabilidades críticas | 20% | OSV + NVD + GHSA |
+| Category | Weight | Source |
+|----------|--------|--------|
+| Operating System | 15% | Detection + endoflife.date |
+| Hardening | 15% | 7 Linux security checks |
+| Tools | 10% | Git, Docker, VS Code |
+| Dependencies | 30% | Node.js, Python, Java |
+| Databases | 10% | PostgreSQL, MySQL, MongoDB, Redis |
+| Critical vulnerabilities | 20% | OSV + NVD + GHSA |
 
-### Cálculo
+### Calculation
 
 ```
-Category Score = promedio(score_individual)
+Category Score = average(individual_scores)
   - green = 100
   - yellow = 60
   - red = 25
@@ -329,63 +329,63 @@ Category Score = promedio(score_individual)
 Overall = OS(15%) + Hardening(15%) + Tools(10%) + Deps(30%) + DBs(10%) - Criticals(20%)
 ```
 
-## Decisiones Técnicas
+## Technical Decisions
 
-### ADR-001: CLI puro con Commander.js
+### ADR-001: Pure CLI with Commander.js
 
-- **Contexto**: Necesidad de una herramienta de seguridad que funcione en cualquier entorno sin dependencias de UI.
-- **Decisión**: Usar Commander.js como framework CLI, TypeScript como lenguaje, CommonJS como módulo.
-- **Consecuencias**:
-  + Funciona en cualquier terminal sin dependencias de GUI
-  + Fácil de integrar en CI/CD
-  + Output estructurado (JSON, SARIF) para herramientas externas
-  - Sin interfaz gráfica interactiva
+- **Context**: Need for a security tool that works in any environment without UI dependencies.
+- **Decision**: Use Commander.js as CLI framework, TypeScript as language, CommonJS as module system.
+- **Consequences**:
+  + Works in any terminal without GUI dependencies
+  + Easy to integrate into CI/CD
+  + Structured output (JSON, SARIF) for external tools
+  - No interactive graphical interface
 
 ### ADR-002: Three-layer architecture
 
-- **Contexto**: Separar concerns entre CLI, lógica de negocio y tipos compartidos.
-- **Decisión**: Arquitectura en tres capas: CLI, Core, Shared.
-- **Consecuencias**:
-  + Core es framework-agnostic (puede usarse con cualquier UI)
-  + Shared types evitan dependencias circulares
-  + Testing más fácil por separación de responsabilidades
+- **Context**: Separate concerns between CLI, business logic, and shared types.
+- **Decision**: Three-layer architecture: CLI, Core, Shared.
+- **Consequences**:
+  + Core is framework-agnostic (can be used with any UI)
+  + Shared types prevent circular dependencies
+  + Easier testing through separation of responsibilities
 
 ### ADR-003: CommonJS modules
 
-- **Contexto**: Necesidad de compatibilidad con Node.js 18+ y herramientas existentes.
-- **Decisión**: Usar CommonJS (`module: "CommonJS"` en tsconfig).
-- **Consecuencias**:
-  + Compatibilidad con `require()` en Node.js
-  + Funciona con `node bin/manel-cli.js` directamente
-  - No puede usar `import`/`export` estándar sin transpilación
+- **Context**: Need for compatibility with Node.js 18+ and existing tools.
+- **Decision**: Use CommonJS (`module: "CommonJS"` in tsconfig).
+- **Consequences**:
+  + Compatibility with `require()` in Node.js
+  + Works with `node bin/manel-cli.js` directly
+  - Cannot use standard `import`/`export` without transpilation
 
-### ADR-004: SQLite para persistencia
+### ADR-004: SQLite for persistence
 
-- **Contexto**: Necesidad de almacenar historial de escaneos sin infraestructura externa.
-- **Decisión**: better-sqlite3 (síncrono, embebido) con WAL mode.
-- **Consecuencias**:
-  + Sin dependencias externas
-  + Base de datos autocontenida
-  + WAL permite lecturas concurrentes
+- **Context**: Need to store scan history without external infrastructure.
+- **Decision**: better-sqlite3 (synchronous, embedded) with WAL mode.
+- **Consequences**:
+  + No external dependencies
+  + Self-contained database
+  + WAL allows concurrent reads
 
 ### ADR-005: Output formats
 
-- **Contexto**: Diferentes usuarios necesitan diferentes formatos de salida.
-- **Decisión**: Soportar table, JSON, SARIF y NDJSON.
-- **Consecuencias**:
-  + Table para terminal interactiva
-  + JSON para scripts y APIs
-  + SARIF para herramientas SAST (GitHub Code Scanning)
-  + NDJSON para streaming y pipes
+- **Context**: Different users need different output formats.
+- **Decision**: Support table, JSON, SARIF and NDJSON.
+- **Consequences**:
+  + Table for interactive terminal
+  + JSON for scripts and APIs
+  + SARIF for SAST tools (GitHub Code Scanning)
+  + NDJSON for streaming and pipes
 
-## Base de Datos
+## Database
 
-### Esquema (SQLite)
+### Schema (SQLite)
 
-La base de datos se almacena en `~/.manel/manel.db` con modo WAL y foreign keys activadas.
+The database is stored at `~/.manel/manel.db` with WAL mode and foreign keys enabled.
 
 ```sql
--- Escaneos ejecutados
+-- Executed scans
 CREATE TABLE scans (
   id            TEXT PRIMARY KEY,
   date          INTEGER NOT NULL,          -- Unix timestamp
@@ -397,44 +397,44 @@ CREATE TABLE scans (
   status        TEXT DEFAULT 'pending'     -- pending | scanning | completed | failed
 );
 
--- Software detectado en cada escaneo
+-- Software detected in each scan
 CREATE TABLE software (
   id          TEXT PRIMARY KEY,
-  name        TEXT NOT NULL,               -- Nombre normalizado (node, npm, git, etc.)
+  name        TEXT NOT NULL,               -- Normalized name (node, npm, git, etc.)
   version     TEXT NOT NULL,
-  path        TEXT,                        -- Ruta del binario detectado
+  path        TEXT,                        -- Detected binary path
   detected_at INTEGER NOT NULL,            -- Unix timestamp
   scan_id     TEXT,                        -- FK -> scans(id)
   FOREIGN KEY (scan_id) REFERENCES scans(id)
 );
 
--- Vulnerabilidades encontradas por software
+-- Vulnerabilities found per software
 CREATE TABLE vulnerabilities (
   id           TEXT PRIMARY KEY,
-  cve          TEXT,                       -- CVE identifier o alias
+  cve          TEXT,                       -- CVE identifier or alias
   severity     TEXT NOT NULL,              -- CRITICAL | HIGH | MEDIUM | LOW | NONE
   description  TEXT,
   software_id  TEXT NOT NULL,              -- FK -> software(id)
-  fixed_version TEXT,                      -- Versión donde se corrigió
+  fixed_version TEXT,                      -- Version where it was fixed
   source       TEXT,                       -- OSV | NVD | GHSA
   FOREIGN KEY (software_id) REFERENCES software(id)
 );
 
--- Resultados de hardening
+-- Hardening results
 CREATE TABLE hardening_results (
   id          TEXT PRIMARY KEY,
   scan_id     TEXT,                        -- FK -> scans(id)
-  check_id    TEXT NOT NULL,               -- Identificador del check
-  category    TEXT NOT NULL,               -- Categoría del check
-  title       TEXT NOT NULL,               -- Título del check
+  check_id    TEXT NOT NULL,               -- Check identifier
+  category    TEXT NOT NULL,               -- Check category
+  title       TEXT NOT NULL,               -- Check title
   status      TEXT NOT NULL,               -- pass | fail | warning | error
   severity    TEXT NOT NULL,               -- CRITICAL | HIGH | MEDIUM | LOW
-  details     TEXT,                        -- Detalles del resultado
+  details     TEXT,                        -- Result details
   FOREIGN KEY (scan_id) REFERENCES scans(id)
 );
 ```
 
-### Relaciones
+### Relationships
 
 ```
 scans (1) ──── (N) software (1) ──── (N) vulnerabilities
@@ -442,72 +442,72 @@ scans (1) ──── (N) software (1) ──── (N) vulnerabilities
    └──── (N) hardening_results
 ```
 
-## Flujo de Escaneo Completo
+## Full Scan Flow
 
-### 1. Parse de Argumentos
+### 1. Argument Parsing
 
-Commander.js parsea los argumentos de la línea de comandos y extrae flags.
+Commander.js parses command-line arguments and extracts flags.
 
-### 2. Detección
+### 2. Detection
 
-El scanner ejecuta comandos del sistema via `execSync()`:
+The scanner executes system commands via `execSync()`:
 
 ```typescript
-// Ejemplo: detectar Node.js
+// Example: detect Node.js
 const result = execSync('node -v', { encoding: 'utf-8' })
-// Resultado: "v20.10.0"
+// Result: "v20.10.0"
 ```
 
-### 3. Análisis de Vulnerabilidades
+### 3. Vulnerability Analysis
 
-Por cada software detectado, el security engine:
+For each detected software, the security engine:
 
-1. Determina el ecosistema (npm, PyPI, Maven)
-2. Consulta vulnerabilidades en paralelo desde OSV, NVD y GHSA
-3. Deduplica resultados por CVE
-4. Determina el estado (green/yellow/red/black)
+1. Determines the ecosystem (npm, PyPI, Maven)
+2. Queries vulnerabilities in parallel from OSV, NVD and GHSA
+3. Deduplicates results by CVE
+4. Determines the status (green/yellow/red/black)
 
 ### 4. Hardening Checks (Linux)
 
-Ejecuta 7 checks de seguridad:
+Executes 7 security checks:
 
-- Firewall activo
-- SELinux habilitado
-- SSH root login deshabilitado
-- Puertos innecesarios cerrados
-- Actualizaciones pendientes
-- Permisos de archivos sensibles
-- Servicios innecesarios deshabilitados
+- Active firewall
+- SELinux enabled
+- SSH root login disabled
+- Unnecessary ports closed
+- Pending updates
+- Sensitive file permissions
+- Unnecessary services disabled
 
-### 5. Cálculo de Score
+### 5. Score Calculation
 
-Calcula el score ponderado basado en:
+Calculates the weighted score based on:
 
-- Estado del SO
-- Resultados de hardening
-- Estado de herramientas
-- Estado de dependencias
-- Estado de bases de datos
-- Penalización por vulnerabilidades críticas
+- OS status
+- Hardening results
+- Tools status
+- Dependencies status
+- Databases status
+- Critical vulnerabilities penalty
 
-### 6. Formateo de Output
+### 6. Output Formatting
 
-Selecciona el formateador según el flag `--format`:
+Selects the formatter based on the `--format` flag:
 
 - **table**: `src/cli/output/table-formatter.ts`
 - **json**: `src/cli/output/json-formatter.ts`
 - **sarif**: `src/cli/output/sarif-formatter.ts`
 - **ndjson**: `src/cli/output/ndjson-formatter.ts`
 
-### 7. Escritura
+### 7. Writing
 
-Escribe el resultado a stdout o archivo según `--output`.
+Writes the result to stdout or file based on `--output`.
 
-## Fuentes del Update Engine
+## Update Engine Sources
 
-| Tecnología | Fuente | Parse |
+| Technology | Source | Parse |
 |-----------|--------|-------|
-| Node.js | `nodejs.org/dist/index.json` | Última versión LTS |
+| Node.js | `nodejs.org/dist/index.json` | Latest LTS version |
 | npm | `registry.npmjs.org/npm/latest` | `version` field |
 | Yarn | `registry.npmjs.org/yarn/latest` | `version` field |
 | pnpm | `registry.npmjs.org/pnpm/latest` | `version` field |
@@ -516,15 +516,15 @@ Escribe el resultado a stdout o archivo según `--output`.
 | Docker Compose | `api.github.com/repos/docker/compose/releases/latest` | `tag_name` |
 | Python | `endoflife.date/api/python/latest.json` | `latest` field |
 | pip | `pypi.org/pypi/pip/json` | `info.version` |
-| Java | `endoflife.date/api/java.json` | Última versión LTS |
+| Java | `endoflife.date/api/java.json` | Latest LTS version |
 | Maven | `api.github.com/repos/apache/maven/releases/latest` | `tag_name` (strip `maven-`) |
 | Gradle | `services.gradle.org/versions/current` | `version` field |
 | VS Code | `api.github.com/repos/microsoft/vscode/releases/latest` | `tag_name` |
-| Ubuntu, Debian, Fedora, macOS, Windows | `endoflife.date/api/<os>.json` | Último ciclo disponible |
+| Ubuntu, Debian, Fedora, macOS, Windows | `endoflife.date/api/<os>.json` | Latest available cycle |
 
-## Tecnologías Detectables
+## Detectable Technologies
 
-| Detector | Comando | Ecosistema | Fuente versión |
+| Detector | Command | Ecosystem | Version Source |
 |----------|---------|-----------|----------------|
 | OS | `process.platform` + `/etc/os-release` | — | endoflife.date |
 | Node | `node -v` | npm | nodejs.org |
@@ -547,4 +547,4 @@ Escribe el resultado a stdout o archivo según `--output`.
 | MongoDB | `mongod --version` | MongoDB | MongoDB |
 | Redis | `redis-cli --version` | Redis | Redis |
 | SQLite | `sqlite3 --version` | SQLite | SQLite |
-| PgAdmin | `pgadmin4 --version` | PostgreSQL | PostgreSQL |
+| PgAdmin | `pgadmin4 --version` | PostgreSQL | PostgreSQL

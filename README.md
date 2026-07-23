@@ -1,6 +1,6 @@
 # Manel — Security Health Monitor CLI
 
-Manel es un CLI de seguridad para entornos de desarrollo que escanea localmente el software instalado (SO, herramientas, lenguajes, bases de datos), consulta vulnerabilidades conocidas en fuentes públicas (OSV, NVD, GitHub Advisories) y genera un Security Score (0-100) con recomendaciones accionables.
+Manel is a security CLI for development environments that locally scans installed software (OS, tools, languages, databases), queries known vulnerabilities from public sources (OSV, NVD, GitHub Advisories), and generates a Security Score (0-100) with actionable recommendations.
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)]()
@@ -10,60 +10,60 @@ Manel es un CLI de seguridad para entornos de desarrollo que escanea localmente 
 ## Quick Start
 
 ```bash
-# Instalación global
+# Global installation
 npm install -g manel
 
-# O ejecutar directamente
+# Or run directly
 npx manel scan
 
-# Verificar estado rápido
+# Quick status check
 manel status
 ```
 
-## Instalación
+## Installation
 
-### Requisitos Previos
+### Prerequisites
 
-- **Node.js 18+** — Descarga desde [nodejs.org](https://nodejs.org/)
-- **npm** — Incluido con Node.js
-- **Git** — Para instalar desde código fuente
+- **Node.js 18+** — Download from [nodejs.org](https://nodejs.org/)
+- **npm** — Included with Node.js
+- **Git** — For installing from source
 
 ```bash
-# Verificar versiones
-node --version   # Debe mostrar v18.x.x o superior
+# Check versions
+node --version   # Should show v18.x.x or higher
 npm --version
 git --version
 ```
 
-### Método 1: Desde npm (recomendado)
+### Method 1: From npm (recommended)
 
 ```bash
 npm install -g manel
 ```
 
-### Método 2: Script de instalación automática
+### Method 2: Automatic installation script
 
 ```bash
-# Clonar el repositorio
+# Clone the repository
 git clone https://github.com/devcristianlopez/manel.git
 cd manel
 
-# Ejecutar instalador
+# Run installer
 bash setup.sh
 
-# O con modo desarrollo (incluye herramientas de test)
+# Or with development mode (includes test tools)
 bash setup.sh --dev
 ```
 
-El script de instalación:
-- ✅ Detecta tu sistema operativo
-- ✅ Verifica/instala Node.js 18+
-- ✅ Instala dependencias
-- ✅ Compila el CLI
-- ✅ Vincula globalmente el comando `manel`
-- ✅ Verifica la instalación
+The installation script:
+- ✅ Detects your operating system
+- ✅ Verifies/installs Node.js 18+
+- ✅ Installs dependencies
+- ✅ Compiles the CLI
+- ✅ Links the `manel` command globally
+- ✅ Verifies the installation
 
-### Método 3: Instalación manual
+### Method 3: Manual installation
 
 ```bash
 git clone https://github.com/devcristianlopez/manel.git
@@ -73,144 +73,144 @@ npm run build:cli
 npm link
 ```
 
-### Método 4: npx (sin instalar)
+### Method 4: npx (without installing)
 
 ```bash
 npx manel scan
 ```
 
-### Scripts npm disponibles
+### Available npm scripts
 
 ```bash
-npm run install:global   # Compilar e instalar globalmente
-npm run uninstall:global # Desinstalar globalmente
-npm run setup           # Ejecutar bash setup.sh
-npm run uninstall       # Ejecutar bash uninstall.sh
+npm run install:global   # Compile and install globally
+npm run uninstall:global # Uninstall globally
+npm run setup           # Run bash setup.sh
+npm run uninstall       # Run bash uninstall.sh
 ```
 
-### Verificar instalación
+### Verify installation
 
 ```bash
 manel --version
 manel status
 ```
 
-### Sistema operativo soportado
+### Supported operating systems
 
 - ✅ Linux (Ubuntu, Debian, Fedora, Arch)
 - ✅ macOS
-- ⚠️ Windows (instalación manual)
+- ⚠️ Windows (manual installation)
 
-## Desinstalación
+## Uninstallation
 
-### Método 1: Script de desinstalación (recomendado)
+### Method 1: Uninstallation script (recommended)
 
 ```bash
-# Si estás en el directorio del proyecto
+# If you are in the project directory
 bash uninstall.sh
 
-# O con la ruta al proyecto
+# Or with the path to the project
 /path/to/manel/uninstall.sh
 ```
 
-Opciones del script:
+Script options:
 ```bash
-bash uninstall.sh --help   # Ver ayuda
-bash uninstall.sh --yes    # Saltar confirmaciones
-bash uninstall.sh --all    # También eliminar directorio de instalación
+bash uninstall.sh --help   # Show help
+bash uninstall.sh --yes    # Skip confirmations
+bash uninstall.sh --all    # Also remove installation directory
 ```
 
-### Método 2: npm
+### Method 2: npm
 
 ```bash
 npm uninstall -g manel
 ```
 
-### Método 3: Manual
+### Method 3: Manual
 
 ```bash
-# Eliminar link global
+# Remove global link
 npm unlink -g manel
 
-# O eliminar el ejecutable directamente
+# Or remove the executable directly
 rm -f $(which manel)
 ```
 
-### Después de desinstalar
+### After uninstalling
 
 ```bash
-# Refrescar cache del shell
+# Refresh shell cache
 hash -r
 ```
 
-## Comandos
+## Commands
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `manel status` | Estado rápido de tecnologías instaladas |
-| `manel scan` | Scan completo: vulnerabilidades + hardening + score |
-| `manel vulnerabilities` | Solo vulnerabilidades (alias: `vulns`) |
-| `manel hardening` | Solo hardening checks (Linux) |
-| `manel score` | Score de seguridad detallado |
-| `manel updates` | Verificar versiones disponibles |
-| `manel schema` | JSON introspectivo del CLI (IA-friendly) |
+| `manel status` | Quick status of installed technologies |
+| `manel scan` | Full scan: vulnerabilities + hardening + score |
+| `manel vulnerabilities` | Vulnerabilities only (alias: `vulns`) |
+| `manel hardening` | Hardening checks only (Linux) |
+| `manel score` | Detailed security score |
+| `manel updates` | Check for available updates |
+| `manel schema` | CLI introspective JSON (AI-friendly) |
 
-### Ejemplos de uso
+### Usage examples
 
 ```bash
-# Estado rápido
+# Quick status
 manel status
 
-# Scan completo con output JSON
+# Full scan with JSON output
 manel scan --format json
 
-# Solo vulnerabilidades críticas y altas
+# Critical and high vulnerabilities only
 manel vulnerabilities --severity CRITICAL,HIGH
 
-# Hardening con output a archivo
+# Hardening with output to file
 manel hardening --output report.txt
 
-# Score detallado sin colores
+# Detailed score without colors
 manel score --no-color
 
-# Verificar actualizaciones disponibles
+# Check for available updates
 manel updates --format json
 ```
 
-## Flags Estándar
+## Standard Flags
 
-Todos los comandos soportan los siguientes flags:
+All commands support the following flags:
 
-| Flag | Descripción |
+| Flag | Description |
 |------|-------------|
-| `-f, --format <format>` | Formato de output: `table`, `json`, `sarif`, `ndjson` |
-| `-o, --output <file>` | Escribir output a archivo en vez de stdout |
-| `-s, --severity <levels>` | Filtrar por severidad (separado por comas) |
-| `--fail-on <severity>` | Salir con código 1 si hay hallazgos >= severidad |
-| `--no-color` | Deshabilitar output con colores ANSI |
-| `-q, --quiet` | Suprimir output que no sean errores |
-| `-V, --verbose` | Habilitar output detallado |
-| `--no-interactive` | Deshabilitar prompts interactivos (para CI/CD) |
+| `-f, --format <format>` | Output format: `table`, `json`, `sarif`, `ndjson` |
+| `-o, --output <file>` | Write output to file instead of stdout |
+| `-s, --severity <levels>` | Filter by severity (comma-separated) |
+| `--fail-on <severity>` | Exit with code 1 if findings >= severity |
+| `--no-color` | Disable ANSI color output |
+| `-q, --quiet` | Suppress non-error output |
+| `-V, --verbose` | Enable verbose output |
+| `--no-interactive` | Disable interactive prompts (for CI/CD) |
 
-### Formatos de Output
+### Output Formats
 
-| Formato | Descripción | Uso recomendado |
-|---------|-------------|-----------------|
-| `table` | Tabla formateada con colores (default) | Terminal interactiva |
-| `json` | JSON pretty-printed | APIs, scripts, debugging |
-| `sarif` | Static Analysis Results Interchange Format | GitHub Code Scanning, herramientas SAST |
-| `ndjson` | Newline-delimited JSON | Pipes, streaming, procesamiento en lotes |
+| Format | Description | Recommended use |
+|--------|-------------|-----------------|
+| `table` | Formatted table with colors (default) | Interactive terminal |
+| `json` | Pretty-printed JSON | APIs, scripts, debugging |
+| `sarif` | Static Analysis Results Interchange Format | GitHub Code Scanning, SAST tools |
+| `ndjson` | Newline-delimited JSON | Pipes, streaming, batch processing |
 
 ## Exit Codes
 
-| Código | Significado |
-|--------|-------------|
-| `0` | Éxito, sin hallazgos |
-| `1` | Hallazgos detectados (vulnerabilidades, hardening failures) |
-| `2` | Error interno |
-| `3` | Input inválido |
+| Code | Meaning |
+|------|---------|
+| `0` | Success, no findings |
+| `1` | Findings detected (vulnerabilities, hardening failures) |
+| `2` | Internal error |
+| `3` | Invalid input |
 
-## Ejemplos de CI/CD
+## CI/CD Examples
 
 ### GitHub Actions
 
@@ -236,143 +236,143 @@ jobs:
           sarif_file: scan-results.sarif
 ```
 
-### Pipeline con fail-on
+### Pipeline with fail-on
 
 ```yaml
 - name: Security gate
   run: manel scan --fail-on high --no-interactive --format json
 ```
 
-### Scan solo de vulnerabilidades
+### Vulnerabilities-only scan
 
 ```yaml
 - name: Check vulnerabilities
   run: manel vulns --severity CRITICAL,HIGH --format ndjson | jq '.severity'
 ```
 
-## Ejemplos de Pipes
+## Pipe Examples
 
 ```bash
-# Extraer vulnerabilidades críticas
+# Extract critical vulnerabilities
 manel scan --format json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
 
-# Contar vulnerabilidades por severidad
+# Count vulnerabilities by severity
 manel scan --format json | jq '[.vulnerabilities[].severity] | group_by(.) | map({(.[0]): length}) | add'
 
-# Filtrar tecnologías desactualizadas
+# Filter outdated technologies
 manel scan --format json | jq '.technologies[] | select(.updateAvailable == true)'
 
-# Enviar resultados a un servicio de logging
+# Send results to a logging service
 manel scan --format ndjson | while read line; do echo "$line" | curl -X POST -d @- https://api.example.com/logs; done
 
-# Generar reporte SARIF y subir a GitHub
+# Generate SARIF report and upload to GitHub
 manel scan --format sarif -o results.sarif
 
-# Verificar solo el score
+# Check score only
 manel score --format json | jq '.overall'
 ```
 
 ## Security Score
 
-El score se calcula con la siguiente ponderación:
+The score is calculated with the following weighting:
 
-| Categoría | Peso |
-|-----------|------|
-| Sistema Operativo | 15% |
+| Category | Weight |
+|----------|--------|
+| Operating System | 15% |
 | Hardening | 15% |
-| Herramientas | 10% |
-| Dependencias | 30% |
-| Bases de Datos | 10% |
-| Vulnerabilidades críticas | 20% |
+| Tools | 10% |
+| Dependencies | 30% |
+| Databases | 10% |
+| Critical vulnerabilities | 20% |
 
-## Tecnologías Detectables
+## Detectable Technologies
 
-- **Lenguajes y runtimes**: Node.js, Python, Python 3, Java
-- **Gestores de paquetes**: npm, Yarn, pnpm, pip, Maven, Gradle
-- **Herramientas**: Git, Docker, Docker Compose, VS Code
-- **Bases de datos**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, pgAdmin
-- **Sistemas operativos**: Ubuntu, Debian, Fedora, macOS, Windows
+- **Languages and runtimes**: Node.js, Python, Python 3, Java
+- **Package managers**: npm, Yarn, pnpm, pip, Maven, Gradle
+- **Tools**: Git, Docker, Docker Compose, VS Code
+- **Databases**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, pgAdmin
+- **Operating systems**: Ubuntu, Debian, Fedora, macOS, Windows
 
-## Schema Introspectivo
+## Introspective Schema
 
-El comando `schema` genera un JSON que describe toda la interfaz del CLI, útil para herramientas de IA y generación de documentación:
+The `schema` command generates a JSON describing the entire CLI interface, useful for AI tools and documentation generation:
 
 ```bash
 manel schema | jq '.commands[] | .name'
 ```
 
-## Desarrollo
+## Development
 
 ```bash
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Compilar CLI
+# Build CLI
 npm run build:cli
 
-# Ejecutar en desarrollo
+# Run in development
 node bin/manel-cli.js scan
 
-# Ejecutar tests
+# Run tests
 npm test
 
 # Type checking
 npm run lint
 ```
 
-## Stack Tecnológico
+## Tech Stack
 
-| Capa | Tecnología |
-|------|-----------|
+| Layer | Technology |
+|-------|-----------|
 | CLI Framework | Commander.js 15 |
-| Lenguaje | TypeScript 5 |
+| Language | TypeScript 5 |
 | Runtime | Node.js 18+ |
-| Base de datos | SQLite (better-sqlite3) |
+| Database | SQLite (better-sqlite3) |
 | Tests | Vitest |
-| APIs externas | OSV, NVD, GitHub Security Advisories, npm registry, PyPI, endoflife.date |
+| External APIs | OSV, NVD, GitHub Security Advisories, npm registry, PyPI, endoflife.date |
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 manel/
 ├── bin/
-│   └── manel-cli.js           # Entry point del CLI
+│   └── manel-cli.js           # CLI entry point
 ├── src/
 │   ├── cli/                   # CLI framework
-│   │   ├── commands/          # Implementación de comandos
-│   │   ├── output/            # Formateadores (table, json, sarif, ndjson)
-│   │   ├── flags.ts           # Flags compartidos
-│   │   ├── errors.ts          # Manejo de errores
-│   │   └── index.ts           # Entry point principal
-│   ├── core/                  # Lógica de negocio
-│   │   ├── scanner/           # Detección de software
-│   │   ├── security/          # Motor de seguridad
-│   │   ├── update-engine/     # Consulta de versiones
-│   │   ├── database/          # Persistencia SQLite
+│   │   ├── commands/          # Command implementations
+│   │   ├── output/            # Formatters (table, json, sarif, ndjson)
+│   │   ├── flags.ts           # Shared flags
+│   │   ├── errors.ts          # Error handling
+│   │   └── index.ts           # Main entry point
+│   ├── core/                  # Business logic
+│   │   ├── scanner/           # Software detection
+│   │   ├── security/          # Security engine
+│   │   ├── update-engine/     # Version checking
+│   │   ├── database/          # SQLite persistence
 │   │   └── index.ts           # Barrel export
-│   └── shared/                # Tipos compartidos
+│   └── shared/                # Shared types
 │       └── types.ts
 ├── package.json
-├── tsconfig.cli.json          # Config TypeScript para CLI
+├── tsconfig.cli.json          # TypeScript config for CLI
 └── vitest.config.ts
 ```
 
-Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para documentación técnica detallada.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation.
 
-## Fuentes de Datos
+## Data Sources
 
 - [OSV](https://osv.dev) — Open Source Vulnerabilities database
 - [NVD](https://nvd.nist.gov) — National Vulnerability Database (USA)
 - [GitHub Security Advisories](https://github.com/advisories) — Advisory Database
-- [End of Life](https://endoflife.date) — Fechas de soporte de software
-- [npm registry](https://registry.npmjs.org) — Últimas versiones de paquetes npm
-- [PyPI](https://pypi.org) — Últimas versiones de paquetes Python
-- [GitHub Releases](https://api.github.com) — Últimas releases de proyectos GitHub
+- [End of Life](https://endoflife.date) — Software support dates
+- [npm registry](https://registry.npmjs.org) — Latest npm package versions
+- [PyPI](https://pypi.org) — Latest Python package versions
+- [GitHub Releases](https://api.github.com) — Latest GitHub project releases
 
 ## Contributing
 
-Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para guías de desarrollo y contribución.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development and contribution guidelines.
 
-## Licencia
+## License
 
 MIT
