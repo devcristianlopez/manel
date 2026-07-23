@@ -22,13 +22,48 @@ manel status
 
 ## Instalación
 
-### Desde npm (recomendado)
+### Requisitos Previos
+
+- **Node.js 18+** — Descarga desde [nodejs.org](https://nodejs.org/)
+- **npm** — Incluido con Node.js
+- **Git** — Para instalar desde código fuente
+
+```bash
+# Verificar versiones
+node --version   # Debe mostrar v18.x.x o superior
+npm --version
+git --version
+```
+
+### Método 1: Desde npm (recomendado)
 
 ```bash
 npm install -g manel
 ```
 
-### Desde código fuente
+### Método 2: Script de instalación automática
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/devcristianlopez/manel.git
+cd manel
+
+# Ejecutar instalador
+bash setup.sh
+
+# O con modo desarrollo (incluye herramientas de test)
+bash setup.sh --dev
+```
+
+El script de instalación:
+- ✅ Detecta tu sistema operativo
+- ✅ Verifica/instala Node.js 18+
+- ✅ Instala dependencias
+- ✅ Compila el CLI
+- ✅ Vincula globalmente el comando `manel`
+- ✅ Verifica la instalación
+
+### Método 3: Instalación manual
 
 ```bash
 git clone https://github.com/devcristianlopez/manel.git
@@ -38,11 +73,75 @@ npm run build:cli
 npm link
 ```
 
-### Requisitos
+### Método 4: npx (sin instalar)
 
-- Node.js 18 o superior
-- npm, yarn o pnpm
-- Sistema operativo: Linux, macOS, o Windows
+```bash
+npx manel scan
+```
+
+### Scripts npm disponibles
+
+```bash
+npm run install:global   # Compilar e instalar globalmente
+npm run uninstall:global # Desinstalar globalmente
+npm run setup           # Ejecutar bash setup.sh
+npm run uninstall       # Ejecutar bash uninstall.sh
+```
+
+### Verificar instalación
+
+```bash
+manel --version
+manel status
+```
+
+### Sistema operativo soportado
+
+- ✅ Linux (Ubuntu, Debian, Fedora, Arch)
+- ✅ macOS
+- ⚠️ Windows (instalación manual)
+
+## Desinstalación
+
+### Método 1: Script de desinstalación (recomendado)
+
+```bash
+# Si estás en el directorio del proyecto
+bash uninstall.sh
+
+# O con la ruta al proyecto
+/path/to/manel/uninstall.sh
+```
+
+Opciones del script:
+```bash
+bash uninstall.sh --help   # Ver ayuda
+bash uninstall.sh --yes    # Saltar confirmaciones
+bash uninstall.sh --all    # También eliminar directorio de instalación
+```
+
+### Método 2: npm
+
+```bash
+npm uninstall -g manel
+```
+
+### Método 3: Manual
+
+```bash
+# Eliminar link global
+npm unlink -g manel
+
+# O eliminar el ejecutable directamente
+rm -f $(which manel)
+```
+
+### Después de desinstalar
+
+```bash
+# Refrescar cache del shell
+hash -r
+```
 
 ## Comandos
 

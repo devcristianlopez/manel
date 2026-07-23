@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # ─── Colors ─────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -21,25 +21,26 @@ ${BOLD}Usage:${NC}
   $(basename "$0") [options]
 
 ${BOLD}Options:${NC}
-  --help     Show this help message
-  --dev      Install devDependencies (test/lint tooling)
+  --help      Show this help message
+  --dev       Install devDependencies (test/lint tooling)
+  --local     Install locally (skip npm link)
+  --force     Force reinstall even if already installed
 
 ${BOLD}What it does:${NC}
-  1. Detects OS (Linux / macOS / Windows)
+  1. Detects OS (Linux / macOS)
   2. Checks/installs Node.js 18+
-  3. Clones the repo if not present
+  3. Locates or clones the repo
   4. Runs npm install
-  5. Compiles with npm run build
-  6. Rebuilds native Electron modules
-  7. Installs globally via npm link
-  8. Verifies installation (manel version, manel status)
+  5. Compiles CLI with npm run build:cli
+  6. Links globally via npm link
+  7. Verifies installation (manel --version)
 
 ${BOLD}Requirements:${NC}
   - Git
-  - curl, wget, or a package manager (for Node.js install)
+  - curl (for Node.js install fallback)
 
 ${BOLD}Supported:${NC}
-  Linux, macOS  —  Windows (manual instructions only)
+  Linux, macOS
 EOF
   exit 0
 }
@@ -53,11 +54,15 @@ step()  { echo -e "\n${BOLD}${BLUE}━━━ $1 ━━━${NC}"; }
 
 # ─── Flags ───────────────────────────────────────────────────────────────────
 DEV_MODE=false
+LOCAL_MODE=false
+FORCE_MODE=false
 
 for arg in "$@"; do
   case "$arg" in
-    --help) show_help ;;
-    --dev)  DEV_MODE=true ;;
+    --help)  show_help ;;
+    --dev)   DEV_MODE=true ;;
+    --local) LOCAL_MODE=true ;;
+    --force) FORCE_MODE=true ;;
     *)
       error "Unknown option: $arg"
       echo "Run $(basename "$0") --help for usage."
@@ -87,14 +92,13 @@ if [ "$OS_NAME" = "windows" ]; then
   echo ""
   echo "  To install Manel on Windows manually:"
   echo "    1. Install Node.js 18+ from https://nodejs.org"
-  echo "    2. Open PowerShell as Administrator and run:"
+  echo "    2. Open PowerShell and run:"
   echo "       git clone https://github.com/devcristianlopez/manel.git"
   echo "       cd manel"
   echo "       npm install"
-  echo "       npm run build"
-  echo "       npx @electron/rebuild"
+  echo "       npm run build:cli"
   echo "       npm link"
-  echo "       manel version"
+  echo "       manel --version"
   echo ""
   exit 1
 fi
@@ -205,14 +209,14 @@ fi
 # ─── Already installed? ──────────────────────────────────────────────────────
 step "Checking previous installation"
 
-if command -v manel &>/dev/null; then
+if command -v manel &>/dev/null && [ "$FORCE_MODE" = false ]; then
   echo ""
   warn "Manel is already installed globally ($(which manel))."
   read -r -p "$(echo -e "${YELLOW}  Reinstall? [y/N]${NC} ")" REPLY
   case "$(echo "$REPLY" | tr '[:upper:]' '[:lower:]')" in
     y|yes) info "Reinstalling..." ;;
     *)
-      info "Skipping."
+      info "Skipping. Use --force to reinstall without prompt."
       exit 0
       ;;
   esac
@@ -231,48 +235,66 @@ fi
 ok "Dependencies installed"
 
 # ─── Build ───────────────────────────────────────────────────────────────────
-step "Compiling project"
+step "Compiling CLI"
 
-info "Running npm run build..."
-npm run build
-ok "Build complete"
-
-# ─── Rebuild native modules ──────────────────────────────────────────────────
-step "Rebuilding native Electron modules"
-
-info "Running @electron/rebuild..."
-npx @electron/rebuild
-ok "Native modules rebuilt"
+info "Running npm run build:cli..."
+npm run build:cli
+ok "CLI compiled successfully"
 
 # ─── Global install ──────────────────────────────────────────────────────────
-step "Installing globally"
+if [ "$LOCAL_MODE" = false ]; then
+  step "Installing globally"
 
-info "Running npm link..."
-npm link
-ok "Manel linked globally"
+  info "Running npm link..."
+  npm link
+  ok "Manel linked globally"
+else
+  step "Local mode"
+  info "Skipping global link. Use: node bin/manel-cli.js <command>"
+fi
 
 # ─── Verify ──────────────────────────────────────────────────────────────────
 step "Verifying installation"
 
-info "Checking 'manel version'..."
-if ! manel version 2>/dev/null; then
-  warn "'manel version' did not produce output, but the binary was linked."
-fi
+if [ "$LOCAL_MODE" = false ]; then
+  info "Checking 'manel --version'..."
+  if manel --version 2>/dev/null; then
+    ok "Version check passed"
+  else
+    warn "'manel --version' did not produce output, but the binary was linked."
+  fi
 
-info "Checking 'manel status'..."
-manel status 2>/dev/null || warn "'manel status' returned non-zero (expected if first run)"
+  info "Checking 'manel status'..."
+  if manel status 2>/dev/null; then
+    ok "Status check passed"
+  else
+    warn "'manel status' returned non-zero (may be expected on first run)"
+  fi
+else
+  info "Checking local CLI..."
+  if node bin/manel-cli.js --version 2>/dev/null; then
+    ok "Local CLI check passed"
+  else
+    warn "Local CLI check failed"
+  fi
+fi
 
 # ─── Finish ──────────────────────────────────────────────────────────────────
 step "Done"
 
-echo -e "${GREEN}${BOLD}  ✅ Manel instalado globalmente!${NC}"
+echo -e "${GREEN}${BOLD}  ✅ Manel installed successfully!${NC}"
 echo ""
-echo -e "  ${BOLD}Comandos disponibles:${NC}"
-echo -e "    ${CYAN}manel status${NC}     → Estado rápido del entorno"
-echo -e "    ${CYAN}manel scan${NC}       → Escaneo completo"
-echo -e "    ${CYAN}manel run${NC}        → Abrir dashboard Electron"
-echo -e "    ${CYAN}manel hardening${NC}  → Checks de seguridad del SO"
-echo -e "    ${CYAN}manel help${NC}       → Ayuda"
+echo -e "  ${BOLD}Available commands:${NC}"
+echo -e "    ${CYAN}manel status${NC}           → Quick environment status"
+echo -e "    ${CYAN}manel scan${NC}             → Full security scan"
+echo -e "    ${CYAN}manel vulnerabilities${NC}  → Check vulnerabilities"
+echo -e "    ${CYAN}manel hardening${NC}        → Hardening checks (Linux)"
+echo -e "    ${CYAN}manel score${NC}            → Security score"
+echo -e "    ${CYAN}manel updates${NC}          → Check for updates"
 echo ""
-echo -e "  ${BOLD}Primer paso:${NC} ${CYAN}manel status${NC}"
+if [ "$LOCAL_MODE" = false ]; then
+  echo -e "  ${BOLD}First step:${NC} ${CYAN}manel status${NC}"
+else
+  echo -e "  ${BOLD}Run locally:${NC} ${CYAN}node bin/manel-cli.js status${NC}"
+fi
 echo ""

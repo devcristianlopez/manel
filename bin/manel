@@ -1,3 +1,55 @@
 #!/usr/bin/env bash
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-node "$DIR/manel-cli.js" "$@"
+# ─── Manel CLI Wrapper ──────────────────────────────────────────────────────
+# Bash wrapper that checks Node.js and runs the compiled CLI.
+# Handles common errors gracefully.
+# ─────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# Colors for error messages
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if Node.js is installed
+if ! command -v node &>/dev/null; then
+  echo -e "${RED}Error: Node.js is not installed.${NC}" >&2
+  echo "" >&2
+  echo "  Manel requires Node.js 18 or higher." >&2
+  echo "  Install it from: https://nodejs.org/" >&2
+  echo "" >&2
+  echo "  Or using nvm:" >&2
+  echo "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash" >&2
+  echo "    nvm install 18" >&2
+  exit 2
+fi
+
+# Check Node.js version (>= 18)
+NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
+if [ "$NODE_VERSION" -lt 18 ] 2>/dev/null; then
+  echo -e "${YELLOW}Warning: Node.js $(node -v) detected, but 18+ is required.${NC}" >&2
+  echo "" >&2
+  echo "  Please upgrade Node.js to version 18 or higher." >&2
+  echo "  Visit: https://nodejs.org/" >&2
+  exit 2
+fi
+
+# Path to the CLI entry point
+CLI_PATH="$SCRIPT_DIR/manel-cli.js"
+
+# Check if the CLI entry point exists
+if [ ! -f "$CLI_PATH" ]; then
+  echo -e "${RED}Error: CLI entry point not found.${NC}" >&2
+  echo "" >&2
+  echo "  Expected: $CLI_PATH" >&2
+  echo "" >&2
+  echo "  This may indicate a corrupted installation." >&2
+  echo "  Try reinstalling with: bash setup.sh --force" >&2
+  exit 2
+fi
+
+# Run the CLI
+exec node "$CLI_PATH" "$@"
