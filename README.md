@@ -1,198 +1,181 @@
-# Manel — Security Health Monitor
+# Manel — Security Health Monitor CLI
 
-Manel es un Security Health Monitor para entornos de desarrollo. Escanea localmente el software instalado (SO, herramientas, lenguajes), consulta vulnerabilidades conocidas en fuentes públicas (OSV, NVD, GitHub Advisories) y genera un Security Score (0-100) con recomendaciones accionables.
+Manel es un CLI de seguridad para entornos de desarrollo que escanea localmente el software instalado (SO, herramientas, lenguajes, bases de datos), consulta vulnerabilidades conocidas en fuentes públicas (OSV, NVD, GitHub Advisories) y genera un Security Score (0-100) con recomendaciones accionables.
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)]()
-[![Electron](https://img.shields.io/badge/Electron-33-47848F.svg)]()
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg)]()
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
-## Screenshot
+## Quick Start
 
-*(pending)*
+```bash
+# Instalación global
+npm install -g manel
 
-## Características
+# O ejecutar directamente
+npx manel scan
 
-- **CLI integrado**: Comandos `manel status`, `manel scan`, `manel hardening` desde la terminal.
-- **Escaneo local**: Detecta SO, herramientas de desarrollo, lenguajes y bases de datos instalados via CLI.
-- **Detección de vulnerabilidades**: Consulta OSV, NVD y GitHub Security Advisories en paralelo.
-- **Versiones actuales**: Consulta las últimas versiones estables desde npm, PyPI, GitHub, endoflife.date, etc.
-- **Security Score**: Puntuación de 0 a 100 ponderada por categoría (OS, hardening, tools, dependencias, databases) con penalización por vulnerabilidades críticas.
-- **Hardening del sistema**: 7 checks de seguridad Linux (firewall, SELinux, SSH, puertos, actualizaciones).
-- **Dashboard visual**: Semáforo con score, conteo de vulnerabilidades por severidad y lista de tecnologías.
-- **Vista de detalle**: Información individual por tecnología con CVEs, severidad y recomendaciones.
-- **Recomendaciones de actualización**: Acción sugerida para cada tecnología según estado.
-- **Almacenamiento local**: Historial de escaneos en SQLite.
-
-## Tecnologías detectables
-
-- **Lenguajes y runtimes**: Node.js, Python, Python 3, Java
-- **Gestores de paquetes**: npm, Yarn, pnpm, pip, Maven, Gradle
-- **Herramientas**: Git, Docker, Docker Compose, VS Code
-- **Bases de datos**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, pgAdmin
-- **Sistemas operativos**: Ubuntu, Debian, Fedora, macOS, Windows
-
-## Requisitos
-
-- Node.js 18 o superior
-- npm, yarn o pnpm
-- Sistema operativo:
-  - Windows 10 o 11
-  - Ubuntu, Debian, Fedora (o cualquier distribución Linux)
-  - macOS
+# Verificar estado rápido
+manel status
+```
 
 ## Instalación
 
-### Instalación global (recomendada)
+### Desde npm (recomendado)
 
 ```bash
-# Con npm global
-git clone https://github.com/devcristianlopez/manel.git
-cd manel
-npm install
-npm run build
-npm install -g .
-
-# O con el script automático
-bash setup.sh
+npm install -g manel
 ```
 
-### Solo para desarrollo
+### Desde código fuente
 
 ```bash
 git clone https://github.com/devcristianlopez/manel.git
 cd manel
 npm install
-npm run dev
+npm run build:cli
+npm link
 ```
 
-## Uso
+### Requisitos
 
-### CLI (interfaz de línea de comandos)
+- Node.js 18 o superior
+- npm, yarn o pnpm
+- Sistema operativo: Linux, macOS, o Windows
 
-Una vez instalado globalmente, usa `manel` desde cualquier terminal:
+## Comandos
 
 | Comando | Descripción |
 |---------|-------------|
-| `manel status` | Escaneo rápido del entorno |
-| `manel scan` | Escaneo completo con vulnerabilidades y hardening |
-| `manel hardening` | Checks de seguridad del sistema (firewall, SELinux, SSH, etc.) |
-| `manel run` | Abre el dashboard Electron |
-| `manel help` | Muestra ayuda con todos los comandos |
-| `manel version` | Versión instalada |
+| `manel status` | Estado rápido de tecnologías instaladas |
+| `manel scan` | Scan completo: vulnerabilidades + hardening + score |
+| `manel vulnerabilities` | Solo vulnerabilidades (alias: `vulns`) |
+| `manel hardening` | Solo hardening checks (Linux) |
+| `manel score` | Score de seguridad detallado |
+| `manel updates` | Verificar versiones disponibles |
+| `manel schema` | JSON introspectivo del CLI (IA-friendly) |
+
+### Ejemplos de uso
 
 ```bash
-# Ejemplos
-manel status      # Ver estado rápido
-manel scan        # Escaneo completo
-manel run         # Abrir dashboard gráfico
+# Estado rápido
+manel status
+
+# Scan completo con output JSON
+manel scan --format json
+
+# Solo vulnerabilidades críticas y altas
+manel vulnerabilities --severity CRITICAL,HIGH
+
+# Hardening con output a archivo
+manel hardening --output report.txt
+
+# Score detallado sin colores
+manel score --no-color
+
+# Verificar actualizaciones disponibles
+manel updates --format json
 ```
 
-### Dashboard Electron
+## Flags Estándar
 
-1. Ejecutar `manel run` para abrir la aplicación.
-2. Hacer clic en **"Escanear ahora"**. El escáner detecta secuencialmente cada tecnología instalada.
-3. Al completar el escaneo, Manel consulta vulnerabilidades y últimas versiones para cada tecnología detectada.
-4. El dashboard muestra:
-   - **Security Score** con barra de progreso y semáforo (verde/amarillo/rojo/negro).
-   - **Sección de bases de datos** con estado individual.
-   - **Sección de hardening** con checks de seguridad pass/fail.
-   - **Conteo de vulnerabilidades** por severidad (críticas, altas, medias, bajas).
-   - **Lista de tecnologías** con indicador de estado.
-5. Hacer clic en cualquier tecnología para ver detalle con CVEs, descripciones y acción recomendada.
+Todos los comandos soportan los siguientes flags:
 
-## Desarrollo
+| Flag | Descripción |
+|------|-------------|
+| `-f, --format <format>` | Formato de output: `table`, `json`, `sarif`, `ndjson` |
+| `-o, --output <file>` | Escribir output a archivo en vez de stdout |
+| `-s, --severity <levels>` | Filtrar por severidad (separado por comas) |
+| `--fail-on <severity>` | Salir con código 1 si hay hallazgos >= severidad |
+| `--no-color` | Deshabilitar output con colores ANSI |
+| `-q, --quiet` | Suprimir output que no sean errores |
+| `-V, --verbose` | Habilitar output detallado |
+| `--no-interactive` | Deshabilitar prompts interactivos (para CI/CD) |
+
+### Formatos de Output
+
+| Formato | Descripción | Uso recomendado |
+|---------|-------------|-----------------|
+| `table` | Tabla formateada con colores (default) | Terminal interactiva |
+| `json` | JSON pretty-printed | APIs, scripts, debugging |
+| `sarif` | Static Analysis Results Interchange Format | GitHub Code Scanning, herramientas SAST |
+| `ndjson` | Newline-delimited JSON | Pipes, streaming, procesamiento en lotes |
+
+## Exit Codes
+
+| Código | Significado |
+|--------|-------------|
+| `0` | Éxito, sin hallazgos |
+| `1` | Hallazgos detectados (vulnerabilidades, hardening failures) |
+| `2` | Error interno |
+| `3` | Input inválido |
+
+## Ejemplos de CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Security Scan
+on: [push, pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g manel
+      - name: Run security scan
+        run: manel scan --format sarif --output scan-results.sarif --no-interactive
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: scan-results.sarif
+```
+
+### Pipeline con fail-on
+
+```yaml
+- name: Security gate
+  run: manel scan --fail-on high --no-interactive --format json
+```
+
+### Scan solo de vulnerabilidades
+
+```yaml
+- name: Check vulnerabilities
+  run: manel vulns --severity CRITICAL,HIGH --format ndjson | jq '.severity'
+```
+
+## Ejemplos de Pipes
 
 ```bash
-npm run dev      # Inicia en modo desarrollo con HMR
-npm run build    # Build de producción
-npm run start    # Vista previa del build
-npm run lint     # Type checking (tsc --noEmit)
+# Extraer vulnerabilidades críticas
+manel scan --format json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
+
+# Contar vulnerabilidades por severidad
+manel scan --format json | jq '[.vulnerabilities[].severity] | group_by(.) | map({(.[0]): length}) | add'
+
+# Filtrar tecnologías desactualizadas
+manel scan --format json | jq '.technologies[] | select(.updateAvailable == true)'
+
+# Enviar resultados a un servicio de logging
+manel scan --format ndjson | while read line; do echo "$line" | curl -X POST -d @- https://api.example.com/logs; done
+
+# Generar reporte SARIF y subir a GitHub
+manel scan --format sarif -o results.sarif
+
+# Verificar solo el score
+manel score --format json | jq '.overall'
 ```
 
-## Scripts disponibles
+## Security Score
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Desarrollo con recarga en caliente (electron-vite dev) |
-| `npm run build` | Compilación para producción (electron-vite build) |
-| `npm run start` | Vista previa del build compilado |
-| `npm run lint` | Verificación de tipos TypeScript |
-| `npm link` | Instalar comando `manel` globalmente |
-| `npm test` | Ejecutar suite de tests (Vitest) |
-
-## Estructura del proyecto
-
-```
-manel/
-├── bin/                       # CLI standalone (sin Electron)
-│   ├── manel                  # Entry point bash
-│   └── manel-cli.js           # CLI core (Node.js, 21 detectores)
-├── src/
-│   ├── main/                  # Proceso principal de Electron
-│   │   ├── index.ts           # Punto de entrada, ventana e IPC
-│   │   ├── ipc/index.ts       # Registro de handlers IPC
-│   │   ├── database/index.ts  # SQLite (scans, software, vulnerabilities, hardening)
-│   │   ├── scanner/           # Detección de software via CLI
-│   │   │   ├── index.ts       # Handler y orquestación del scan
-│   │   │   └── detectors.ts   # 21 detectores + OS
-│   │   ├── security/          # Motor de seguridad
-│   │   │   ├── index.ts       # Handlers IPC de seguridad
-│   │   │   ├── security-engine.ts   # Análisis y estado de tecnologías
-│   │   │   ├── score-engine.ts      # Cálculo de Security Score
-│   │   │   ├── score-utils.ts       # Categorización y utilidades de score
-│   │   │   ├── vulnerability-sources.ts # OSV, NVD, GHSA queries
-│   │   │   ├── hardening.ts         # 7 checks de seguridad Linux
-│   │   │   ├── eol.ts               # Fechas de fin de soporte
-│   │   │   ├── ecosystem-map.ts     # Mapeo software -> ecosistema
-│   │   │   └── cache.ts             # Caché de vulnerabilidades
-│   │   └── update-engine/     # Consulta de últimas versiones
-│   │       ├── index.ts       # 24 fuentes y handlers
-│   │       └── __tests__/     # Tests del update engine
-│   ├── preload/
-│   │   └── index.ts           # Context bridge (API expuesta al renderer)
-│   ├── renderer/              # UI React + Tailwind
-│   │   ├── main.tsx           # Punto de entrada React
-│   │   ├── App.tsx            # Componente principal (dashboard/detalle)
-│   │   ├── components/
-│   │   │   ├── ScoreCard.tsx       # Tarjeta de Security Score
-│   │   │   ├── TechnologyList.tsx  # Grid de tecnologías
-│   │   │   ├── TechnologyItem.tsx  # Item individual
-│   │   │   ├── TechnologyDetail.tsx # Vista detalle
-│   │   │   ├── DatabaseSection.tsx # Sección de bases de datos
-│   │   │   ├── HardeningSection.tsx # Sección de hardening
-│   │   │   ├── ScanButton.tsx      # Botón de escaneo
-│   │   │   └── ScanProgress.tsx    # Indicador de progreso
-│   │   └── assets/index.css        # Estilos Tailwind
-│   └── shared/
-│       └── types.ts           # Tipos compartidos (Software, Vulnerability, Scan, etc.)
-├── index.html                 # Landing page del proyecto
-├── setup.sh                   # Script de instalación global
-├── electron.vite.config.ts    # Configuración de electron-vite
-├── electron-builder.yml       # Configuración de empaquetado
-├── tailwind.config.js
-├── postcss.config.js
-└── tsconfig*.json             # Configuración TypeScript
-```
-
-## Arquitectura
-
-```
-CLI (manel status/scan/hardening)
-  └── Node.js child_process → comandos del sistema
-
-Electron App (manel run)
-  └── UI (React) ↔ IPC (preload) ↔ Main Process
-                                    ├── Scanner → CLI commands
-                                    ├── Database → SQLite (manel.db)
-                                    ├── Security Engine → OSV / NVD / GitHub APIs
-                                    ├── Update Engine → npm / PyPI / GitHub / EoL APIs
-                                    ├── Hardening → checks de seguridad del SO
-                                    └── Score Engine → cálculo local
-```
-
-### Security Score
+El score se calcula con la siguiente ponderación:
 
 | Categoría | Peso |
 |-----------|------|
@@ -203,19 +186,81 @@ Electron App (manel run)
 | Bases de Datos | 10% |
 | Vulnerabilidades críticas | 20% |
 
-Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para documentación técnica detallada.
+## Tecnologías Detectables
 
-## Stack tecnológico
+- **Lenguajes y runtimes**: Node.js, Python, Python 3, Java
+- **Gestores de paquetes**: npm, Yarn, pnpm, pip, Maven, Gradle
+- **Herramientas**: Git, Docker, Docker Compose, VS Code
+- **Bases de datos**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, SQLite, pgAdmin
+- **Sistemas operativos**: Ubuntu, Debian, Fedora, macOS, Windows
+
+## Schema Introspectivo
+
+El comando `schema` genera un JSON que describe toda la interfaz del CLI, útil para herramientas de IA y generación de documentación:
+
+```bash
+manel schema | jq '.commands[] | .name'
+```
+
+## Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Compilar CLI
+npm run build:cli
+
+# Ejecutar en desarrollo
+node bin/manel-cli.js scan
+
+# Ejecutar tests
+npm test
+
+# Type checking
+npm run lint
+```
+
+## Stack Tecnológico
 
 | Capa | Tecnología |
 |------|-----------|
-| Frontend | Electron 33, React 18, TypeScript 5, Tailwind 3 |
-| Backend | Node.js (main process), better-sqlite3 |
-| Build | electron-vite 2, electron-builder 25 |
+| CLI Framework | Commander.js 15 |
+| Lenguaje | TypeScript 5 |
+| Runtime | Node.js 18+ |
+| Base de datos | SQLite (better-sqlite3) |
 | Tests | Vitest |
 | APIs externas | OSV, NVD, GitHub Security Advisories, npm registry, PyPI, endoflife.date |
 
-## Fuentes de datos
+## Estructura del Proyecto
+
+```
+manel/
+├── bin/
+│   └── manel-cli.js           # Entry point del CLI
+├── src/
+│   ├── cli/                   # CLI framework
+│   │   ├── commands/          # Implementación de comandos
+│   │   ├── output/            # Formateadores (table, json, sarif, ndjson)
+│   │   ├── flags.ts           # Flags compartidos
+│   │   ├── errors.ts          # Manejo de errores
+│   │   └── index.ts           # Entry point principal
+│   ├── core/                  # Lógica de negocio
+│   │   ├── scanner/           # Detección de software
+│   │   ├── security/          # Motor de seguridad
+│   │   ├── update-engine/     # Consulta de versiones
+│   │   ├── database/          # Persistencia SQLite
+│   │   └── index.ts           # Barrel export
+│   └── shared/                # Tipos compartidos
+│       └── types.ts
+├── package.json
+├── tsconfig.cli.json          # Config TypeScript para CLI
+└── vitest.config.ts
+```
+
+Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para documentación técnica detallada.
+
+## Fuentes de Datos
 
 - [OSV](https://osv.dev) — Open Source Vulnerabilities database
 - [NVD](https://nvd.nist.gov) — National Vulnerability Database (USA)
@@ -224,6 +269,10 @@ Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para documentación técnica detallada.
 - [npm registry](https://registry.npmjs.org) — Últimas versiones de paquetes npm
 - [PyPI](https://pypi.org) — Últimas versiones de paquetes Python
 - [GitHub Releases](https://api.github.com) — Últimas releases de proyectos GitHub
+
+## Contributing
+
+Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para guías de desarrollo y contribución.
 
 ## Licencia
 

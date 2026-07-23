@@ -4,16 +4,18 @@ Gracias por tu interés en contribuir a Manel. Este documento describe los está
 
 ## Tabla de contenidos
 
-- [Código de conducta](#codigo-de-conducta)
+- [Código de conducta](#código-de-conducta)
 - [Reportar bugs](#reportar-bugs)
 - [Sugerir features](#sugerir-features)
 - [Entorno de desarrollo](#entorno-de-desarrollo)
-- [Estandares de codigo](#estandares-de-codigo)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Scripts disponibles](#scripts-disponibles)
+- [Estándares de código](#estándares-de-código)
 - [Proceso de PR](#proceso-de-pr)
-- [Guia de commits](#guia-de-commits)
-- [Documentacion](#documentacion)
+- [Guía de commits](#guía-de-commits)
+- [Documentación](#documentación)
 
-## Codigo de conducta
+## Código de conducta
 
 Este proyecto se rige por un código de conducta basado en el respeto mutuo. No se tolera discriminación, acoso ni ningún tipo de conducta que genere un entorno hostil. Al participar, aceptas mantener un ambiente colaborativo y profesional.
 
@@ -33,18 +35,17 @@ Al reportar, incluye:
 - **Comportamiento actual**: Qué ocurre realmente.
 - **Entorno**:
   - Sistema operativo y versión.
-  - Versión de Manel (se ve en `npm run dev` o en el build).
+  - Versión de Manel (`manel --version`).
   - Versión de Node.js y npm.
-- **Logs**: Captura la salida de la consola de desarrollo (DevTools del renderer o terminal del main process).
+- **Logs**: Captura la salida de la terminal con `--verbose`.
 - **Evidencia**: Capturas de pantalla o vídeo si aplica.
 
 ```
 ### Bug: [Título breve]
 
 **Pasos:**
-1. Abrir Manel
-2. Hacer clic en "Escanear ahora"
-3. ...
+1. Ejecutar `manel scan`
+2. ...
 
 **Esperado:** ...
 **Actual:** ...
@@ -61,7 +62,7 @@ Antes de proponer una funcionalidad nueva:
 
 1. Revisa los issues existentes para evitar duplicados.
 2. Considera si la funcionalidad es de interés general o muy específica de tu caso.
-3. Piensa en cómo se integraría con la arquitectura actual (Electron + React + IPC).
+3. Piensa en cómo se integraría con la arquitectura actual (CLI + Core).
 
 Al proponer, incluye:
 
@@ -85,86 +86,162 @@ Al proponer, incluye:
 - Node.js 18 o superior (recomendado 20+).
 - npm 9+ (o yarn/pnpm).
 - Git.
-- Un gestor de ventanas compatible (para desarrollo en Linux: X11 o Wayland).
+- Linux o macOS (hardening checks solo funcionan en Linux).
 
 ### Setup inicial
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/devcristianlopez/manel.git
 cd manel
 npm install
-npm run dev
+npm run build:cli
 ```
 
-Esto inicia la aplicación en modo desarrollo con hot module replacement.
-
-### Compilación
+### Ejecutar en desarrollo
 
 ```bash
-npm run build      # Compila el proyecto
-npm run start      # Vista previa del build
+# Compilar y ejecutar
+npm run build:cli
+node bin/manel-cli.js scan
+
+# O usar npm link para tener `manel` disponible globalmente
+npm run global-link
+manel scan
+```
+
+### Ejecutar tests
+
+```bash
+npm test                      # Todos los tests
+npx vitest run                # Alternativa
+npx vitest --watch            # Modo watch
+npm run test:coverage         # Con cobertura
 ```
 
 ### Verificación de tipos
 
 ```bash
-npm run lint       # Ejecuta tsc --noEmit
+npm run lint                  # Ejecuta tsc --noEmit
 ```
 
-### Testing
+## Estructura del proyecto
 
-Los tests se ejecutan con Vitest:
-
-```bash
-npx vitest run                    # Todos los tests
-npx vitest run src/main/security  # Tests de un módulo específico
-npx vitest --watch                # Modo watch
+```
+manel/
+├── bin/
+│   └── manel-cli.js           # Entry point (Node.js)
+├── src/
+│   ├── cli/                   # CLI framework
+│   │   ├── commands/          # Implementación de comandos
+│   │   │   ├── status.ts      # `manel status`
+│   │   │   ├── scan.ts        # `manel scan`
+│   │   │   ├── vulnerabilities.ts  # `manel vulnerabilities`
+│   │   │   ├── hardening.ts   # `manel hardening`
+│   │   │   ├── score.ts       # `manel score`
+│   │   │   ├── updates.ts     # `manel updates`
+│   │   │   └── schema.ts      # `manel schema`
+│   │   ├── output/            # Formateadores de salida
+│   │   │   ├── table-formatter.ts
+│   │   │   ├── json-formatter.ts
+│   │   │   ├── sarif-formatter.ts
+│   │   │   └── ndjson-formatter.ts
+│   │   ├── flags.ts           # Flags compartidos
+│   │   ├── errors.ts          # Manejo de errores
+│   │   └── index.ts           # Entry point principal
+│   ├── core/                  # Lógica de negocio
+│   │   ├── scanner/           # Detección de software
+│   │   ├── security/          # Motor de seguridad
+│   │   ├── update-engine/     # Consulta de versiones
+│   │   ├── database/          # Persistencia SQLite
+│   │   └── index.ts           # Barrel export
+│   └── shared/
+│       └── types.ts           # Tipos compartidos
+├── package.json
+├── tsconfig.json              # Config TypeScript base
+├── tsconfig.cli.json          # Config TypeScript para CLI
+├── vitest.config.ts           # Config de tests
+└── CONTRIBUTING.md
 ```
 
-### Depuración
+### Módulos clave
 
-- **Renderer**: Abre DevTools con `Ctrl+Shift+I` (o `Cmd+Option+I` en macOS).
-- **Main process**: Los logs de `console.log` aparecen en la terminal donde se ejecuta `npm run dev`.
-- **IPC**: Revisa la pestaña "Console" del DevTools para ver eventos de escaneo.
+| Módulo | Responsabilidad |
+|--------|-----------------|
+| `cli/commands/` | Un archivo por comando, cada uno exporta `registerXCommand()` |
+| `cli/output/` | Un formateador por formato (table, json, sarif, ndjson) |
+| `core/scanner/` | Detección de software via `execSync()` |
+| `core/security/` | Consulta de vulnerabilidades y hardening |
+| `core/update-engine/` | Consulta de últimas versiones |
+| `core/database/` | Operaciones SQLite |
+| `shared/types.ts` | Tipos TypeScript compartidos |
 
-## Estandares de codigo
+## Scripts disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run build:cli` | Compilar TypeScript a JavaScript |
+| `npm run global-link` | Instalar `manel` globalmente via npm link |
+| `npm test` | Ejecutar suite de tests (Vitest) |
+| `npm run test:watch` | Tests en modo watch |
+| `npm run test:coverage` | Tests con reporte de cobertura |
+| `npm run lint` | Verificación de tipos TypeScript |
+
+## Estándares de código
 
 ### TypeScript
 
-- **strict mode**: El proyecto usa `strict: true` en tsconfig. No relajes esta configuración.
-- **Tipado explícito**: Todas las funciones deben tener tipos de retorno explícitos. Evita `any`.
-- **Tipos compartidos**: Los tipos usados por main y renderer van en `src/shared/types.ts`.
-- **Null safety**: Prefiere `T | null` sobre `T | undefined` para valores opcionales. Usa `??` en lugar de `||` para valores null/undefined.
+- **strict mode**: El proyecto usa `strict: false` en `tsconfig.cli.json` por compatibilidad. Si contribuyes, evita `any` cuando sea posible.
+- **Tipado explícito**: Funciones públicas deben tener tipos de retorno explícitos.
+- **Tipos compartidos**: Los tipos usados por CLI y Core van en `src/shared/types.ts`.
+- **Null safety**: Prefiere `T | null` sobre `T | undefined`. Usa `??` en lugar de `||`.
 
 ### Estilo
 
 - **Indentación**: 2 espacios.
 - **Comillas**: Simples (`'`) en TypeScript/JavaScript.
 - **Punto y coma**: Obligatorio al final de cada sentencia.
-- **Nombres**: `camelCase` para variables y funciones, `PascalCase` para clases, tipos e interfaces, `UPPER_CASE` para constantes globales.
+- **Nombres**: `camelCase` para variables y funciones, `PascalCase` para clases/tipos, `UPPER_CASE` para constantes.
 - **Límite de línea**: 120 caracteres.
 
-### ESLint y formato
+### Commander.js
 
-Actualmente el proyecto no tiene ESLint configurado. Se recomienda seguir las convenciones del código existente. Si agregas ESLint, usa la configuración estándar de TypeScript:
+- Cada comando se registra con `registerXCommand(program)`.
+- Usa las opciones de `flags.ts` para flags compartidos.
+- El handler recibe `CommonFlags` como tipo.
+- Retorna un exit code numérico (0, 1, 2, 3).
 
-```json
-{
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-  "rules": {
-    "@typescript-eslint/no-explicit-any": "error"
-  }
+```typescript
+// Ejemplo de patrón de comando
+export function registerMyCommand(program: Command): void {
+  program
+    .command('my-command')
+    .description('Description here')
+    .option(...COMMON_OPTIONS)
+    .option(...OUTPUT_OPTIONS)
+    .action(async (options: CommonFlags) => {
+      await executeMyCommand(options)
+    })
+}
+
+async function executeMyCommand(options: CommonFlags): Promise<number> {
+  // Implementación
+  return 0
 }
 ```
 
+### Output Engine
+
+- Cada formateador implementa `FormatterFn<T>`.
+- Usa `FormatOptions` para controlar colores, pretty-print, etc.
+- El output va a stdout, los errores a stderr.
+
 ### Buenas prácticas
 
-- **Funciones puras**: Prefiere funciones sin efectos secundarios siempre que sea posible.
-- **Error handling**: Usa try/catch en handlers IPC y operaciones de sistema (CLI, fetch). Nunca dejes que una excepción crashee la app.
+- **Funciones puras**: Prefiere funciones sin efectos secundarios en Core.
+- **Error handling**: Usa try/catch en handlers de comandos. Nunca dejes que una excepción crashee la app.
 - **Fetch con timeout**: Todas las llamadas HTTP deben tener timeout (usa `AbortController`).
-- **No bloquees el renderer**: Las operaciones pesadas (escaneo, consultas de red) van en el main process.
-- **Context isolation**: No accedas a Node.js desde el renderer. Usa la API expuesta via `window.manel`.
-- **Logs significativos**: Usa `console.log` con prefijo del módulo, ej: `[security-engine]`, `[update-engine]`.
+- **Logs significativos**: Usa `console.error` con prefijo del módulo para stderr, `console.log` para stdout.
+- **Exit codes**: Respeta los códigos de salida semánticos (0=éxito, 1=hallazgos, 2=error, 3=input inválido).
 
 ## Proceso de PR
 
@@ -177,12 +254,13 @@ Actualmente el proyecto no tiene ESLint configurado. Se recomienda seguir las co
    - `docs/nombre-del-cambio`
    - `refactor/nombre`
 3. **Desarrolla** siguiendo los estándares de código.
-4. **Actualiza documentación** si tu cambio afecta la API, arquitectura o comportamiento.
-5. **Ejecuta `npm run lint`** y asegúrate de que no haya errores de tipos.
-6. **Ejecuta los tests** (`npx vitest run`) y verifica que pasen.
-7. **Haz commit** siguiendo la guía de commits.
-8. **Push** a tu rama.
-9. **Abre un Pull Request** contra `main`.
+4. **Compila** el CLI: `npm run build:cli`
+5. **Ejecuta los tests**: `npm test`
+6. **Verifica tipos**: `npm run lint`
+7. **Actualiza documentación** si tu cambio afecta la API, arquitectura o comportamiento.
+8. **Haz commit** siguiendo la guía de commits.
+9. **Push** a tu rama.
+10. **Abre un Pull Request** contra `main`.
 
 ### Template de PR
 
@@ -206,9 +284,10 @@ Actualmente el proyecto no tiene ESLint configurado. Se recomienda seguir las co
 ## Checklist
 
 - [ ] El código sigue los estándares del proyecto
-- [ ] Se actualizó la documentación si aplica
-- [ ] Los tests pasan (`npx vitest run`)
+- [ ] Se ejecutó `npm run build:cli` sin errores
+- [ ] Los tests pasan (`npm test`)
 - [ ] Type checking OK (`npm run lint`)
+- [ ] Se actualizó la documentación si aplica
 - [ ] No se introdujeron dependencias nuevas sin revisión
 ```
 
@@ -218,14 +297,14 @@ Actualmente el proyecto no tiene ESLint configurado. Se recomienda seguir las co
 - Se pueden solicitar cambios. Por favor, responde a los comentarios.
 - Una vez aprobado, se mergea a `main`.
 
-## Guia de commits
+## Guía de commits
 
 Usa mensajes descriptivos en inglés:
 
 ```
 feat(scanner): add support for Rust detection
 fix(security): handle timeout in OSV query
-docs(architecture): update IPC handler table
+docs(architecture): update CLI architecture diagram
 refactor(score): extract category calculation
 ```
 
@@ -239,18 +318,29 @@ Formato recomendado:
 
 Tipos: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`.
 
-## Documentacion
+## Documentación
 
-- **README.md**: Documentación general del proyecto (instalación, uso, stack).
-- **ARCHITECTURE.md**: Documentación técnica detallada (arquitectura, BD, IPC, decisiones).
+- **README.md**: Documentación general del proyecto (instalación, uso, comandos).
+- **ARCHITECTURE.md**: Documentación técnica detallada (arquitectura, tipos, decisiones).
 - **CONTRIBUTING.md**: Esta guía.
 - **Código**: Los cambios que introducen nuevas funcionalidades o modifican el comportamiento existente deben incluir la documentación correspondiente en el mismo PR.
 
 ## Tests
 
-- Los tests existentes están en `src/main/security/__tests__/` y `src/main/update-engine/__tests__/`.
+- Los tests existentes están en `src/core/__tests__/`, `src/cli/__tests__/`, `src/cli/commands/__tests__/` y `src/cli/output/__tests__/`.
 - Si agregas un módulo nuevo, incluye tests unitarios.
-- Para funcionalidades de UI (renderer), prioriza la revisión manual guiada por los tipos.
+- Para funcionalidades de CLI, prioriza tests de integración que verifiquen el output.
+
+### Ejecutar tests específicos
+
+```bash
+# Tests de un módulo específico
+npx vitest run src/core/security
+npx vitest run src/cli/commands
+
+# Test individual
+npx vitest run src/cli/output/json-formatter.test.ts
+```
 
 ## Preguntas
 
