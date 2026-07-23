@@ -10,7 +10,7 @@
  * @module cli/commands/scan
  */
 
-import type { Command } from 'commander'
+import { Command, Option } from 'commander'
 import type { CoreTechnologyResult, CoreHardeningCheck } from '../../core/types'
 import { detectAll, detectOS } from '../../core/scanner'
 import { analyzeAllTechnologies, runHardeningChecks, calculateScoreBreakdown } from '../../core/security'
@@ -19,8 +19,10 @@ import { formatOutput } from '../output'
 import type { OutputScanResult, OutputTechnology, OutputVulnerability, OutputHardeningResult, OutputSecurityScore, OutputScanSummary } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { parseSeverityFilter, normalizeFailOn } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { parseSeverityFilter } from '../flags'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
+import { getEcosystemName, shouldFailOnSeverity } from '../utils'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
@@ -39,11 +41,17 @@ export function registerScanCommand(program: Command): void {
     .option('-f, --format <format>', 'Output format (table, json, sarif, ndjson)', 'table')
     .option('-o, --output <file>', 'Write output to file instead of stdout')
     .option('-s, --severity <levels>', 'Filter by severity levels (comma-separated)')
-    .option('--fail-on <severity>', 'Exit with code 1 if findings at or above this severity')
+    .addOption(new Option('--fail-on <severity>', 'Exit with code 1 if findings at or above this severity').choices(['critical', 'high', 'medium', 'low']))
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel scan
+  $ manel scan --format json
+  $ manel scan --format sarif --output scan.sarif
+  $ manel scan --severity HIGH,CRITICAL
+  $ manel scan --fail-on critical --no-color`)
     .action(async (options: CommonFlags) => {
       await executeScanCommand(options)
     })
@@ -67,24 +75,20 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
   const severityFilter = options.severity ? parseSeverityFilter(options.severity) : undefined
-  const failOnSeverity = options.failOn ? normalizeFailOn(options.failOn) : undefined
+  const failOnSeverity = options.failOn ? options.failOn.toUpperCase() : undefined
+  const version = getPackageVersion()
+
+  const spinner = new Spinner('🔍 Running security scan...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
   try {
-    if (!options.quiet) {
-      process.stderr.write('🔍 Running security scan...\n')
-    }
-
     // Step 1: Detect technologies
-    if (options.verbose) {
-      process.stderr.write('  Detecting installed technologies...\n')
-    }
+    spinner.step('  Detecting installed technologies...')
     const softwareList = detectAll()
     const osInfo = detectOS()
 
     // Step 2: Analyze vulnerabilities
-    if (options.verbose) {
-      process.stderr.write('  Analyzing vulnerabilities...\n')
-    }
+    spinner.step('  Analyzing vulnerabilities...')
     const technologyResults = await analyzeAllTechnologies(
       softwareList.map(sw => ({
         name: sw.name,
@@ -105,16 +109,12 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
     // Step 3: Run hardening checks
     let hardeningChecks: CoreHardeningCheck[] = []
     if (process.platform === 'linux') {
-      if (options.verbose) {
-        process.stderr.write('  Running hardening checks...\n')
-      }
+      spinner.step('  Running hardening checks...')
       hardeningChecks = await runHardeningChecks()
     }
 
     // Step 4: Calculate score
-    if (options.verbose) {
-      process.stderr.write('  Calculating security score...\n')
-    }
+    spinner.step('  Calculating security score...')
     const scoreBreakdown = calculateScoreBreakdown(technologyResults, hardeningChecks)
 
     // Step 5: Build output data
@@ -132,15 +132,11 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
       filteredData = filterBySeverity(outputData, severityFilter)
     }
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope(filteredData, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      filteredData as any,
+      filteredData,
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -150,6 +146,8 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
     } else {
       process.stdout.write(formattedOutput)
     }
+
+    spinner.stop('✅ Scan complete')
 
     // Determine exit code based on findings
     const hasCriticalFindings = outputData.vulnerabilities.some(
@@ -166,11 +164,11 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
 
     return 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during scan command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2
@@ -183,13 +181,6 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
 
 /**
  * Build the complete scan output data.
- *
- * @param technologyResults - Analyzed technology results
- * @param hardeningChecks - Hardening check results
- * @param scoreBreakdown - Security score breakdown
- * @param totalSoftware - Total software count
- * @param osInfo - OS information
- * @returns Complete scan output data
  */
 function buildScanOutputData(
   technologyResults: CoreTechnologyResult[],
@@ -198,7 +189,6 @@ function buildScanOutputData(
   totalSoftware: number,
   osInfo: { platform: string; distro?: string; version?: string }
 ): OutputScanResult {
-  // Map technology results to output format
   const technologies: OutputTechnology[] = technologyResults.map(tr => ({
     name: tr.name,
     version: tr.installedVersion,
@@ -208,7 +198,6 @@ function buildScanOutputData(
     updateAvailable: tr.installedVersion !== tr.latestVersion,
   }))
 
-  // Add OS as first technology
   technologies.unshift({
     name: osInfo.distro ?? osInfo.platform,
     version: osInfo.version ?? null,
@@ -216,7 +205,6 @@ function buildScanOutputData(
     ecosystem: 'os',
   })
 
-  // Map vulnerabilities to output format
   const vulnerabilities: OutputVulnerability[] = technologyResults.flatMap(tr =>
     tr.vulnerabilities.map(v => ({
       id: v.cve,
@@ -233,7 +221,6 @@ function buildScanOutputData(
     }))
   )
 
-  // Map hardening checks to output format
   const hardening: OutputHardeningResult[] = [
     {
       checks: hardeningChecks.map(hc => ({
@@ -251,13 +238,11 @@ function buildScanOutputData(
     },
   ]
 
-  // Score
   const score: OutputSecurityScore = {
     overall: scoreBreakdown.overall,
     breakdown: scoreBreakdown.breakdown as any,
   }
 
-  // Summary
   const summary: OutputScanSummary = {
     totalTechnologies: totalSoftware,
     detectedTechnologies: technologyResults.length,
@@ -280,10 +265,6 @@ function buildScanOutputData(
 
 /**
  * Filter scan results by severity.
- *
- * @param data - Scan result data
- * @param severities - Severity levels to include
- * @returns Filtered scan result data
  */
 function filterBySeverity(
   data: OutputScanResult,
@@ -307,63 +288,4 @@ function filterBySeverity(
       ).length,
     },
   }
-}
-
-/**
- * Check if the scan should fail based on severity threshold.
- *
- * @param data - Scan result data
- * @param failOnSeverity - Severity threshold
- * @returns True if scan should fail
- */
-function shouldFailOnSeverity(data: OutputScanResult, failOnSeverity: string): boolean {
-  const severityOrder = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-  const thresholdIndex = severityOrder.indexOf(failOnSeverity.toUpperCase())
-
-  if (thresholdIndex === -1) return false
-
-  return data.vulnerabilities.some(v => {
-    const vulnIndex = severityOrder.indexOf(v.severity)
-    return vulnIndex <= thresholdIndex
-  }) || data.hardening.some(h =>
-    h.checks.some(c => {
-      if (c.status === 'pass') return false
-      const checkIndex = severityOrder.indexOf(c.severity)
-      return checkIndex <= thresholdIndex
-    })
-  )
-}
-
-/**
- * Get ecosystem name for a technology.
- *
- * @param name - Technology name
- * @returns Ecosystem identifier
- */
-function getEcosystemName(name: string): string {
-  const ecosystemMap: Record<string, string> = {
-    node: 'npm',
-    npm: 'npm',
-    yarn: 'npm',
-    pnpm: 'npm',
-    git: 'git',
-    docker: 'docker',
-    'docker-compose': 'docker',
-    python: 'PyPI',
-    python3: 'PyPI',
-    pip: 'PyPI',
-    java: 'Maven',
-    maven: 'Maven',
-    gradle: 'Maven',
-    code: 'VSCode',
-    postgresql: 'PostgreSQL',
-    mysql: 'MySQL',
-    mariadb: 'MySQL',
-    mongodb: 'MongoDB',
-    redis: 'Redis',
-    sqlite3: 'SQLite',
-    pgadmin4: 'PostgreSQL',
-  }
-
-  return ecosystemMap[name] ?? 'unknown'
 }

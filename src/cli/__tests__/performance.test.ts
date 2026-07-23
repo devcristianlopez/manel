@@ -29,6 +29,7 @@ vi.mock('fs/promises', () => ({
 }))
 
 import { execSync } from 'child_process'
+import { createProgram } from '../index'
 import { formatOutput } from '../output'
 import {
   SCAN_RESULT,
@@ -276,8 +277,9 @@ describe('CLI Performance', () => {
     })
 
     it('should execute schema command without errors', async () => {
+      const program = createProgram()
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({ color: false })
+      const exitCode = await executeSchemaCommand(program, { color: false })
 
       expect(exitCode).toBe(0)
       expect(stdoutOutput.length).toBeGreaterThan(0)

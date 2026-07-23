@@ -28,6 +28,7 @@ vi.mock('fs/promises', () => ({
 }))
 
 import { execSync } from 'child_process'
+import { createProgram } from '../index'
 import {
   isValidFormat,
   isValidSeverity,
@@ -44,6 +45,13 @@ import {
   formatErrorForStderr,
   formatErrorForJson,
 } from '../errors'
+
+// Read version dynamically from package.json
+import { readFileSync } from 'fs'
+import { join } from 'path'
+const PACKAGE_VERSION = JSON.parse(
+  readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
+).version
 
 const mockExecSync = execSync as ReturnType<typeof vi.fn>
 
@@ -411,7 +419,7 @@ describe('CLI Edge Cases', () => {
 
       try {
         const { executeSchemaCommand } = await import('../commands/schema')
-        await executeSchemaCommand({ color: false })
+        await executeSchemaCommand(createProgram(), { color: false })
 
         expect(() => JSON.parse(stdoutOutput)).not.toThrow()
       } finally {
@@ -429,10 +437,10 @@ describe('CLI Edge Cases', () => {
 
       try {
         const { executeSchemaCommand } = await import('../commands/schema')
-        await executeSchemaCommand({ color: false })
+        await executeSchemaCommand(createProgram(), { color: false })
 
         const parsed = JSON.parse(stdoutOutput)
-        expect(parsed.version).toBe('0.1.0')
+        expect(parsed.version).toBe(PACKAGE_VERSION)
       } finally {
         process.stdout.write = origWrite
       }
@@ -448,7 +456,7 @@ describe('CLI Edge Cases', () => {
 
       try {
         const { executeSchemaCommand } = await import('../commands/schema')
-        await executeSchemaCommand({ color: false })
+        await executeSchemaCommand(createProgram(), { color: false })
 
         const parsed = JSON.parse(stdoutOutput)
         expect(typeof parsed.description).toBe('string')
@@ -468,7 +476,7 @@ describe('CLI Edge Cases', () => {
 
       try {
         const { executeSchemaCommand } = await import('../commands/schema')
-        await executeSchemaCommand({ color: false })
+        await executeSchemaCommand(createProgram(), { color: false })
 
         const parsed = JSON.parse(stdoutOutput)
         expect(parsed.globalFlags).toBeDefined()

@@ -14,7 +14,8 @@ import { formatOutput } from '../output'
 import type { OutputHardeningResult } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
 import { internalError, formatErrorForStderr, validationError } from '../errors'
 
 // ============================================================================
@@ -35,7 +36,11 @@ export function registerHardeningCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel hardening
+  $ manel hardening --format json
+  $ manel hardening --format sarif --output hardening.sarif`)
     .action(async (options: CommonFlags) => {
       await executeHardeningCommand(options)
     })
@@ -58,6 +63,7 @@ export async function executeHardeningCommand(options: CommonFlags): Promise<num
   const ttyInfo = detectTTY()
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
+  const version = getPackageVersion()
 
   // Check platform
   if (process.platform !== 'linux') {
@@ -69,34 +75,22 @@ export async function executeHardeningCommand(options: CommonFlags): Promise<num
     return 3
   }
 
-  try {
-    if (!options.quiet) {
-      process.stderr.write('🔒 Running hardening checks...\n')
-    }
+  const spinner = new Spinner('🔒 Running hardening checks...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
+  try {
     // Run hardening checks
-    if (options.verbose) {
-      process.stderr.write('  Checking firewall configuration...\n')
-      process.stderr.write('  Checking SELinux/AppArmor...\n')
-      process.stderr.write('  Checking SSH configuration...\n')
-      process.stderr.write('  Checking open ports...\n')
-      process.stderr.write('  Checking security updates...\n')
-      process.stderr.write('  Checking core dumps...\n')
-    }
+    spinner.step('  Checking firewall configuration...')
     const hardeningChecks = await runHardeningChecks()
 
     // Map to output format
     const hardeningResult = mapHardeningResult(hardeningChecks)
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope({ hardening: [hardeningResult] }, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      { hardening: [hardeningResult] } as any,
+      { hardening: [hardeningResult] },
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -107,15 +101,17 @@ export async function executeHardeningCommand(options: CommonFlags): Promise<num
       process.stdout.write(formattedOutput)
     }
 
+    spinner.stop('✅ Hardening checks complete')
+
     // Determine exit code based on failures
     const hasFailures = hardeningResult.summary.fail > 0
     return hasFailures ? 1 : 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during hardening command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2
@@ -128,9 +124,6 @@ export async function executeHardeningCommand(options: CommonFlags): Promise<num
 
 /**
  * Map hardening checks to output format.
- *
- * @param checks - Hardening check results
- * @returns Hardening result for output
  */
 function mapHardeningResult(checks: CoreHardeningCheck[]): OutputHardeningResult {
   return {

@@ -256,7 +256,6 @@ describe('CLI Framework', () => {
       expect(options).toContain('--no-color')
       expect(options).toContain('--quiet')
       expect(options).toContain('--verbose')
-      expect(options).toContain('--no-interactive')
     })
 
     it('should register scan command with severity options', () => {
@@ -378,8 +377,9 @@ describe('CLI Framework', () => {
     })
 
     it('should execute schema command', async () => {
+      const program = createProgram()
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({})
+      const exitCode = await executeSchemaCommand(program, {})
       
       expect(exitCode).toBe(0)
     })

@@ -16,7 +16,8 @@ import { formatOutput } from '../output'
 import type { OutputSecurityScore } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
@@ -37,7 +38,11 @@ export function registerScoreCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel score
+  $ manel score --format json
+  $ manel score --format sarif --output score.sarif`)
     .action(async (options: CommonFlags) => {
       await executeScoreCommand(options)
     })
@@ -60,22 +65,18 @@ export async function executeScoreCommand(options: CommonFlags): Promise<number>
   const ttyInfo = detectTTY()
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
+  const version = getPackageVersion()
+
+  const spinner = new Spinner('📊 Calculating security score...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
   try {
-    if (!options.quiet) {
-      process.stderr.write('📊 Calculating security score...\n')
-    }
-
     // Detect technologies
-    if (options.verbose) {
-      process.stderr.write('  Detecting installed technologies...\n')
-    }
+    spinner.step('  Detecting installed technologies...')
     const softwareList = detectAll()
 
     // Analyze technologies
-    if (options.verbose) {
-      process.stderr.write('  Analyzing vulnerabilities...\n')
-    }
+    spinner.step('  Analyzing vulnerabilities...')
     const technologyResults = await analyzeAllTechnologies(
       softwareList.map(sw => ({
         name: sw.name,
@@ -96,16 +97,12 @@ export async function executeScoreCommand(options: CommonFlags): Promise<number>
     // Run hardening checks
     let hardeningChecks: CoreHardeningCheck[] = []
     if (process.platform === 'linux') {
-      if (options.verbose) {
-        process.stderr.write('  Running hardening checks...\n')
-      }
+      spinner.step('  Running hardening checks...')
       hardeningChecks = await runHardeningChecks()
     }
 
     // Calculate score breakdown
-    if (options.verbose) {
-      process.stderr.write('  Calculating score breakdown...\n')
-    }
+    spinner.step('  Calculating score breakdown...')
     const scoreBreakdown = calculateScoreBreakdown(technologyResults, hardeningChecks)
 
     // Map to output format
@@ -114,15 +111,11 @@ export async function executeScoreCommand(options: CommonFlags): Promise<number>
       breakdown: scoreBreakdown.breakdown as any,
     }
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope({ score }, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      { score } as any,
+      { score },
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -133,13 +126,14 @@ export async function executeScoreCommand(options: CommonFlags): Promise<number>
       process.stdout.write(formattedOutput)
     }
 
+    spinner.stop('✅ Score calculated')
     return 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during score command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2

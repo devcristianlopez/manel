@@ -65,12 +65,6 @@ export const VERBOSE_FLAG = {
   description: 'Enable verbose output',
 } as const
 
-/** No interactive flag. */
-export const NO_INTERACTIVE_FLAG = {
-  long: '--no-interactive',
-  description: 'Disable interactive prompts (for CI/CD)',
-} as const
-
 // ============================================================================
 // 2. Flag Option Types
 // ============================================================================
@@ -91,8 +85,6 @@ export interface CommonFlags {
   quiet?: boolean
   /** Verbose mode */
   verbose?: boolean
-  /** No interactive mode */
-  interactive?: boolean
 }
 
 // ============================================================================
@@ -139,56 +131,3 @@ export function parseSeverityFilter(input: string): Severity[] {
 export function normalizeFailOn(severity: string): string {
   return severity.toUpperCase()
 }
-
-// ============================================================================
-// 4. Commander.js Option Configuration
-// ============================================================================
-
-/** Commander.js option definitions for common flags. */
-export const COMMON_OPTIONS = [
-  `${FORMAT_FLAG.long}, ${FORMAT_FLAG.short} <format>`,
-  FORMAT_FLAG.description,
-  FORMAT_FLAG.default,
-] as const
-
-/** Commander.js option definitions for output flag. */
-export const OUTPUT_OPTIONS = [
-  `${OUTPUT_FLAG.long}, ${OUTPUT_FLAG.short} <file>`,
-  OUTPUT_FLAG.description,
-] as const
-
-/** Commander.js option definitions for severity flag. */
-export const SEVERITY_OPTIONS = [
-  `${SEVERITY_FLAG.long}, ${SEVERITY_FLAG.short} <levels>`,
-  SEVERITY_FLAG.description,
-] as const
-
-/** Commander.js option definitions for fail-on flag. */
-export const FAIL_ON_OPTIONS = [
-  FAIL_ON_FLAG.long,
-  FAIL_ON_FLAG.description,
-] as const
-
-/** Commander.js option definitions for no-color flag. */
-export const NO_COLOR_OPTIONS = [
-  NO_COLOR_FLAG.long,
-  NO_COLOR_FLAG.description,
-] as const
-
-/** Commander.js option definitions for quiet flag. */
-export const QUIET_OPTIONS = [
-  `${QUIET_FLAG.long}, ${QUIET_FLAG.short}`,
-  QUIET_FLAG.description,
-] as const
-
-/** Commander.js option definitions for verbose flag. */
-export const VERBOSE_OPTIONS = [
-  `${VERBOSE_FLAG.long}, ${VERBOSE_FLAG.short}`,
-  VERBOSE_FLAG.description,
-] as const
-
-/** Commander.js option definitions for no-interactive flag. */
-export const NO_INTERACTIVE_OPTIONS = [
-  NO_INTERACTIVE_FLAG.long,
-  NO_INTERACTIVE_FLAG.description,
-] as const

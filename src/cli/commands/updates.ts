@@ -14,7 +14,8 @@ import { formatOutput } from '../output'
 import type { UpdateInfo } from '../../shared/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
@@ -35,7 +36,11 @@ export function registerUpdatesCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel updates
+  $ manel updates --format json
+  $ manel updates --format table --output updates.txt`)
     .action(async (options: CommonFlags) => {
       await executeUpdatesCommand(options)
     })
@@ -58,22 +63,18 @@ export async function executeUpdatesCommand(options: CommonFlags): Promise<numbe
   const ttyInfo = detectTTY()
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
+  const version = getPackageVersion()
+
+  const spinner = new Spinner('🔄 Checking for updates...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
   try {
-    if (!options.quiet) {
-      process.stderr.write('🔄 Checking for updates...\n')
-    }
-
     // Detect technologies
-    if (options.verbose) {
-      process.stderr.write('  Detecting installed technologies...\n')
-    }
+    spinner.step('  Detecting installed technologies...')
     const softwareList = detectAll()
 
     // Get latest versions
-    if (options.verbose) {
-      process.stderr.write('  Querying version sources...\n')
-    }
+    spinner.step('  Querying version sources...')
     const latestVersions = await getAllLatestVersions()
 
     // Map to UpdateInfo format
@@ -90,15 +91,11 @@ export async function executeUpdatesCommand(options: CommonFlags): Promise<numbe
         }
       })
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope({ updates }, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      { updates } as any,
+      { updates },
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -109,13 +106,14 @@ export async function executeUpdatesCommand(options: CommonFlags): Promise<numbe
       process.stdout.write(formattedOutput)
     }
 
+    spinner.stop('✅ Update check complete')
     return 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during updates command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2
@@ -128,9 +126,6 @@ export async function executeUpdatesCommand(options: CommonFlags): Promise<numbe
 
 /**
  * Get the source name for a technology.
- *
- * @param name - Technology name
- * @returns Source name
  */
 function getSourceName(name: string): string {
   const sourceMap: Record<string, string> = {

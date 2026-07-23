@@ -8,8 +8,6 @@
  */
 
 import { Command } from 'commander'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 
 // Command imports
 import { registerStatusCommand } from './commands/status'
@@ -20,24 +18,13 @@ import { registerScoreCommand } from './commands/score'
 import { registerUpdatesCommand } from './commands/updates'
 import { registerSchemaCommand } from './commands/schema'
 
+// Utilities
+import { getPackageVersion } from './version'
+import { stopActiveSpinner } from './spinner'
+
 // ============================================================================
 // 1. Program Setup
 // ============================================================================
-
-/**
- * Read package.json to get version.
- *
- * @returns Package version string
- */
-function getPackageVersion(): string {
-  try {
-    const packageJsonPath = join(__dirname, '..', '..', 'package.json')
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-    return packageJson.version || '0.1.0'
-  } catch {
-    return '0.1.0'
-  }
-}
 
 /**
  * Create and configure the CLI program.
@@ -66,7 +53,27 @@ function createProgram(): Command {
 }
 
 // ============================================================================
-// 2. Main Execution
+// 2. Signal Handling
+// ============================================================================
+
+/**
+ * Install signal handlers for graceful shutdown.
+ * Stops any active spinner and exits with appropriate code.
+ */
+function installSignalHandlers(): void {
+  process.on('SIGINT', () => {
+    stopActiveSpinner()
+    process.exit(130) // Standard exit code for SIGINT
+  })
+
+  process.on('SIGTERM', () => {
+    stopActiveSpinner()
+    process.exit(143) // Standard exit code for SIGTERM
+  })
+}
+
+// ============================================================================
+// 3. Main Execution
 // ============================================================================
 
 /**
@@ -76,6 +83,8 @@ function createProgram(): Command {
  * Handles top-level errors and sets exit codes.
  */
 async function main(): Promise<void> {
+  installSignalHandlers()
+
   const program = createProgram()
 
   try {
@@ -94,11 +103,12 @@ async function main(): Promise<void> {
 }
 
 // ============================================================================
-// 3. Exports
+// 4. Exports
 // ============================================================================
 
 // Export for programmatic use
 export { createProgram }
+export { getPackageVersion }
 export { registerStatusCommand }
 export { registerScanCommand }
 export { registerVulnerabilitiesCommand }

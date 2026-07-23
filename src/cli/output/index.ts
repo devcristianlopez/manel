@@ -84,6 +84,7 @@ export type FormatterData =
   | OutputHardeningResult[]
   | OutputSecurityScore
   | UpdateInfo[]
+  | Record<string, unknown>
 
 /**
  * Format data in the specified output format.
@@ -92,26 +93,14 @@ export type FormatterData =
  * to the appropriate formatter based on the format parameter and
  * auto-detects the data type for table formatting.
  *
+ * For SARIF and NDJSON formats, partial data is gracefully handled by
+ * constructing a complete ScanResult with empty arrays for missing fields.
+ *
  * @param data - Data to format
  * @param format - Output format ('table' | 'json' | 'sarif' | 'ndjson')
  * @param options - Formatting options
  * @returns Formatted string output
  * @throws Error if the format is not supported
- *
- * @example
- * ```ts
- * // Table for human consumption
- * const tableOutput = formatOutput(scanResult, 'table', { color: true })
- *
- * // JSON for machine consumption
- * const jsonOutput = formatOutput(scanResult, 'json', { pretty: true })
- *
- * // SARIF for CI/CD
- * const sarifOutput = formatOutput(scanResult, 'sarif', { version: '0.1.0' })
- *
- * // NDJSON for streaming
- * const ndjsonOutput = formatOutput(scanResult, 'ndjson')
- * ```
  */
 export function formatOutput(
   data: FormatterData,
@@ -125,19 +114,17 @@ export function formatOutput(
     case 'json':
       return formatJson(data, options)
 
-    case 'sarif':
-      // SARIF only supports full scan results
-      if (!isScanResult(data)) {
-        throw new Error('SARIF format requires a complete ScanResult. Partial data is not supported.')
-      }
-      return formatSarif(data, options)
+    case 'sarif': {
+      // SARIF works best with full scan results, but gracefully handle partial data
+      const scanResult = toPartialScanResult(data)
+      return formatSarif(scanResult, options)
+    }
 
-    case 'ndjson':
-      // NDJSON only supports full scan results
-      if (!isScanResult(data)) {
-        throw new Error('NDJSON format requires a complete ScanResult. Partial data is not supported.')
-      }
-      return formatNdjson(data, options)
+    case 'ndjson': {
+      // NDJSON works best with full scan results, but gracefully handle partial data
+      const scanResult = toPartialScanResult(data)
+      return formatNdjson(scanResult, options)
+    }
 
     default: {
       const _exhaustive: never = format
@@ -165,4 +152,69 @@ function isScanResult(data: FormatterData): data is OutputScanResult {
     'score' in data &&
     Array.isArray((data as OutputScanResult).technologies)
   )
+}
+
+/**
+ * Convert any data shape to a partial ScanResult for SARIF/NDJSON.
+ * If data is already a full ScanResult, return it as-is.
+ * Otherwise, wrap partial data in a ScanResult with empty arrays.
+ *
+ * @param data - Input data of any supported shape
+ * @returns A complete (possibly partial) ScanResult
+ */
+function toPartialScanResult(data: FormatterData): OutputScanResult {
+  if (isScanResult(data)) {
+    return data
+  }
+
+  // Build a partial ScanResult from whatever data we have
+  const result: OutputScanResult = {
+    technologies: [],
+    vulnerabilities: [],
+    hardening: [],
+    score: { overall: 0, breakdown: { os: 0, hardening: 0, tools: 0, dependencies: 0, databases: 0, criticalsPenalty: 0 } },
+    summary: {
+      totalTechnologies: 0,
+      detectedTechnologies: 0,
+      totalVulnerabilities: 0,
+      criticalVulnerabilities: 0,
+      highVulnerabilities: 0,
+      hardeningPassRate: 0,
+    },
+  }
+
+  // Populate fields that are present in the data
+  if (typeof data === 'object' && data !== null) {
+    const obj = data as Record<string, unknown>
+
+    if ('technologies' in obj && Array.isArray(obj.technologies)) {
+      result.technologies = obj.technologies as OutputScanResult['technologies']
+    }
+    if ('vulnerabilities' in obj && Array.isArray(obj.vulnerabilities)) {
+      result.vulnerabilities = obj.vulnerabilities as OutputScanResult['vulnerabilities']
+    }
+    if ('hardening' in obj && Array.isArray(obj.hardening)) {
+      result.hardening = obj.hardening as OutputScanResult['hardening']
+    }
+    if ('score' in obj && typeof obj.score === 'object' && obj.score !== null) {
+      result.score = obj.score as OutputSecurityScore
+    }
+    if ('updates' in obj && Array.isArray(obj.updates)) {
+      // For updates data, populate technologies from update info
+      const updates = obj.updates as UpdateInfo[]
+      result.technologies = updates.map(u => ({
+        name: u.technology,
+        version: u.currentVersion,
+        detected: true,
+        ecosystem: 'unknown',
+        latestVersion: u.latestVersion,
+        updateAvailable: u.updateAvailable,
+      }))
+    }
+    if ('summary' in obj && typeof obj.summary === 'object' && obj.summary !== null) {
+      result.summary = obj.summary as OutputScanResult['summary']
+    }
+  }
+
+  return result
 }

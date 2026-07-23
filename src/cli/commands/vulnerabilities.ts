@@ -7,7 +7,7 @@
  * @module cli/commands/vulnerabilities
  */
 
-import type { Command } from 'commander'
+import { Command, Option } from 'commander'
 import type { CoreTechnologyResult } from '../../core/types'
 import { detectAll } from '../../core/scanner'
 import { analyzeAllTechnologies } from '../../core/security'
@@ -16,8 +16,10 @@ import { formatOutput } from '../output'
 import type { OutputVulnerability } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { parseSeverityFilter, normalizeFailOn } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { parseSeverityFilter } from '../flags'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
+import { shouldFailOnSeverityVulns } from '../utils'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
@@ -37,11 +39,16 @@ export function registerVulnerabilitiesCommand(program: Command): void {
     .option('-f, --format <format>', 'Output format (table, json, sarif, ndjson)', 'table')
     .option('-o, --output <file>', 'Write output to file instead of stdout')
     .option('-s, --severity <levels>', 'Filter by severity levels (comma-separated)')
-    .option('--fail-on <severity>', 'Exit with code 1 if findings at or above this severity')
+    .addOption(new Option('--fail-on <severity>', 'Exit with code 1 if findings at or above this severity').choices(['critical', 'high', 'medium', 'low']))
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel vulnerabilities
+  $ manel vulns --format json
+  $ manel vulns --severity CRITICAL
+  $ manel vulns --fail-on high --output vulns.json`)
     .action(async (options: CommonFlags) => {
       await executeVulnerabilitiesCommand(options)
     })
@@ -65,23 +72,19 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
   const severityFilter = options.severity ? parseSeverityFilter(options.severity) : undefined
-  const failOnSeverity = options.failOn ? normalizeFailOn(options.failOn) : undefined
+  const failOnSeverity = options.failOn ? options.failOn.toUpperCase() : undefined
+  const version = getPackageVersion()
+
+  const spinner = new Spinner('🔍 Analyzing vulnerabilities...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
   try {
-    if (!options.quiet) {
-      process.stderr.write('🔍 Analyzing vulnerabilities...\n')
-    }
-
     // Detect technologies
-    if (options.verbose) {
-      process.stderr.write('  Detecting installed technologies...\n')
-    }
+    spinner.step('  Detecting installed technologies...')
     const softwareList = detectAll()
 
     // Analyze for vulnerabilities
-    if (options.verbose) {
-      process.stderr.write('  Querying vulnerability databases...\n')
-    }
+    spinner.step('  Querying vulnerability databases...')
     const technologyResults = await analyzeAllTechnologies(
       softwareList.map(sw => ({
         name: sw.name,
@@ -109,15 +112,11 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
       )
     }
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope({ vulnerabilities }, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      { vulnerabilities } as any,
+      { vulnerabilities },
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -128,13 +127,15 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
       process.stdout.write(formattedOutput)
     }
 
+    spinner.stop('✅ Vulnerability analysis complete')
+
     // Determine exit code
     const hasCriticalFindings = vulnerabilities.some(
       v => v.severity === 'CRITICAL' || v.severity === 'HIGH'
     )
 
     if (failOnSeverity) {
-      if (shouldFailOnSeverity(vulnerabilities, failOnSeverity)) {
+      if (shouldFailOnSeverityVulns(vulnerabilities, failOnSeverity)) {
         return 1
       }
     } else if (hasCriticalFindings) {
@@ -143,11 +144,11 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
 
     return 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during vulnerabilities command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2
@@ -160,9 +161,6 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
 
 /**
  * Map technology results to vulnerability output format.
- *
- * @param technologyResults - Analyzed technology results
- * @returns Array of vulnerabilities
  */
 function mapVulnerabilities(technologyResults: CoreTechnologyResult[]): OutputVulnerability[] {
   return technologyResults.flatMap(tr =>
@@ -180,23 +178,4 @@ function mapVulnerabilities(technologyResults: CoreTechnologyResult[]): OutputVu
       references: [],
     }))
   )
-}
-
-/**
- * Check if vulnerabilities should trigger failure based on severity threshold.
- *
- * @param vulnerabilities - List of vulnerabilities
- * @param failOnSeverity - Severity threshold
- * @returns True if should fail
- */
-function shouldFailOnSeverity(vulnerabilities: OutputVulnerability[], failOnSeverity: string): boolean {
-  const severityOrder = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
-  const thresholdIndex = severityOrder.indexOf(failOnSeverity.toUpperCase())
-
-  if (thresholdIndex === -1) return false
-
-  return vulnerabilities.some(v => {
-    const vulnIndex = severityOrder.indexOf(v.severity)
-    return vulnIndex <= thresholdIndex
-  })
 }

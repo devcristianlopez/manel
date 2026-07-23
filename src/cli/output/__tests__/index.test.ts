@@ -78,12 +78,18 @@ describe('formatOutput — Main Entry Point', () => {
       expect(report.runs).toHaveLength(1)
     })
 
-    it('should throw for non-ScanResult data', () => {
-      expect(() => formatOutput(VULNERABILITIES, 'sarif')).toThrow('SARIF format requires a complete ScanResult')
+    it('should gracefully degrade for non-ScanResult data', () => {
+      const output = formatOutput(VULNERABILITIES, 'sarif')
+      const report = JSON.parse(output)
+      expect(report.version).toBe('2.1.0')
+      expect(report.runs).toHaveLength(1)
     })
 
-    it('should throw for SecurityScore', () => {
-      expect(() => formatOutput(SCORE, 'sarif')).toThrow('SARIF format requires a complete ScanResult')
+    it('should gracefully degrade for SecurityScore', () => {
+      const output = formatOutput(SCORE, 'sarif')
+      const report = JSON.parse(output)
+      expect(report.version).toBe('2.1.0')
+      expect(report.runs).toHaveLength(1)
     })
   })
 
@@ -97,8 +103,13 @@ describe('formatOutput — Main Entry Point', () => {
       }
     })
 
-    it('should throw for non-ScanResult data', () => {
-      expect(() => formatOutput(VULNERABILITIES, 'ndjson')).toThrow('NDJSON format requires a complete ScanResult')
+    it('should gracefully degrade for non-ScanResult data', () => {
+      const output = formatOutput(VULNERABILITIES, 'ndjson')
+      const lines = output.split('\n').filter(l => l.trim())
+      expect(lines.length).toBeGreaterThan(0)
+      for (const line of lines) {
+        expect(() => JSON.parse(line)).not.toThrow()
+      }
     })
   })
 

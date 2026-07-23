@@ -8,6 +8,7 @@
  */
 
 import { type CliError, type ResponseEnvelope, ExitCode, okResponse, errorResponse } from '../shared/types'
+import { red, yellow, dim } from './output/colors'
 
 // ============================================================================
 // 1. Error Codes
@@ -102,10 +103,11 @@ export function notFoundError(message: string): CliError {
  *
  * @param data - Response data
  * @param duration - Execution duration in ms
+ * @param version - CLI version string
  * @returns Success response envelope
  */
-export function successEnvelope<T>(data: T, duration: number): ResponseEnvelope<T> {
-  return okResponse(data, duration, '0.1.0')
+export function successEnvelope<T>(data: T, duration: number, version: string = '0.0.0'): ResponseEnvelope<T> {
+  return okResponse(data, duration, version)
 }
 
 /**
@@ -113,15 +115,17 @@ export function successEnvelope<T>(data: T, duration: number): ResponseEnvelope<
  *
  * @param error - CLI error
  * @param duration - Execution duration in ms
+ * @param version - CLI version string
  * @param warnings - Optional warnings
  * @returns Error response envelope
  */
 export function errorEnvelope(
   error: CliError,
   duration: number,
+  version: string = '0.0.0',
   warnings: string[] = []
 ): ResponseEnvelope<null> {
-  return errorResponse(error, duration, '0.1.0', warnings)
+  return errorResponse(error, duration, version, warnings)
 }
 
 // ============================================================================
@@ -174,23 +178,20 @@ export function findingsExitCode(hasFindings: boolean, severity?: string): numbe
  * @returns Formatted error string
  */
 export function formatErrorForStderr(error: CliError, useColor: boolean = true): string {
-  const reset = useColor ? '\x1b[0m' : ''
-  const red = useColor ? '\x1b[31m' : ''
-  const yellow = useColor ? '\x1b[33m' : ''
-  const dim = useColor ? '\x1b[2m' : ''
+  const colorOpts = { forceColor: useColor }
 
-  let output = `${red}Error: ${error.message}${reset}\n`
-  output += `${dim}Code: ${error.code}${reset}\n`
+  let output = `${red('Error: ' + error.message, colorOpts)}\n`
+  output += `${dim('Code: ' + error.code, colorOpts)}\n`
 
   if (error.suggestions && error.suggestions.length > 0) {
-    output += `${yellow}Suggestions:${reset}\n`
+    output += `${yellow('Suggestions:', colorOpts)}\n`
     for (const suggestion of error.suggestions) {
-      output += `${dim}  - ${suggestion}${reset}\n`
+      output += `${dim('  - ' + suggestion, colorOpts)}\n`
     }
   }
 
   if (error.recoverable) {
-    output += `${yellow}This error may be transient. Try again.${reset}\n`
+    output += `${yellow('This error may be transient. Try again.', colorOpts)}\n`
   }
 
   return output

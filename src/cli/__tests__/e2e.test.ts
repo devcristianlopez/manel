@@ -30,6 +30,13 @@ vi.mock('fs/promises', () => ({
 import { execSync } from 'child_process'
 import { createProgram } from '../index'
 
+// Read version dynamically from package.json
+import { readFileSync } from 'fs'
+import { join } from 'path'
+const PACKAGE_VERSION = JSON.parse(
+  readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
+).version
+
 const mockExecSync = execSync as ReturnType<typeof vi.fn>
 
 describe('CLI End-to-End Integration', () => {
@@ -101,23 +108,20 @@ describe('CLI End-to-End Integration', () => {
       mockExecSync.mockReturnValue('v22.0.0\n')
 
       const { executeStatusCommand } = await import('../commands/status')
-      // SARIF requires a full ScanResult — status command produces partial data
-      // so it may either produce SARIF or return an error
+      // SARIF gracefully handles partial data via toPartialScanResult
       const exitCode = await executeStatusCommand({ format: 'sarif', color: false })
 
-      // Exit code 0 = success, 2 = error (SARIF not supported for partial data)
-      expect([0, 2]).toContain(exitCode)
+      expect(exitCode).toBe(0)
     })
 
     it('should produce valid NDJSON output with --format ndjson', async () => {
       mockExecSync.mockReturnValue('v22.0.0\n')
 
       const { executeStatusCommand } = await import('../commands/status')
-      // NDJSON requires a full ScanResult — status command produces partial data
+      // NDJSON gracefully handles partial data via toPartialScanResult
       const exitCode = await executeStatusCommand({ format: 'ndjson', color: false })
 
-      // Exit code 0 = success, 2 = error (NDJSON not supported for partial data)
-      expect([0, 2]).toContain(exitCode)
+      expect(exitCode).toBe(0)
     })
 
     it('should return exit code 0 on success', async () => {
@@ -287,22 +291,20 @@ describe('CLI End-to-End Integration', () => {
       mockExecSync.mockReturnValue('v22.0.0\n')
 
       const { executeVulnerabilitiesCommand } = await import('../commands/vulnerabilities')
-      // SARIF requires a full ScanResult — vulnerabilities command produces partial data
+      // SARIF gracefully handles partial data via toPartialScanResult
       const exitCode = await executeVulnerabilitiesCommand({ format: 'sarif', color: false, quiet: true })
 
-      // Exit code 0 = success, 2 = error (SARIF not supported for partial data)
-      expect([0, 2]).toContain(exitCode)
+      expect(exitCode).toBe(0)
     })
 
     it('should produce valid NDJSON output', async () => {
       mockExecSync.mockReturnValue('v22.0.0\n')
 
       const { executeVulnerabilitiesCommand } = await import('../commands/vulnerabilities')
-      // NDJSON requires a full ScanResult — vulnerabilities command produces partial data
+      // NDJSON gracefully handles partial data via toPartialScanResult
       const exitCode = await executeVulnerabilitiesCommand({ format: 'ndjson', color: false, quiet: true })
 
-      // Exit code 0 = success, 2 = error (NDJSON not supported for partial data)
-      expect([0, 2]).toContain(exitCode)
+      expect(exitCode).toBe(0)
     })
   })
 
@@ -427,20 +429,22 @@ describe('CLI End-to-End Integration', () => {
 
   describe('schema command', () => {
     it('should produce valid JSON schema', async () => {
+      const program = createProgram()
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({ color: false })
+      const exitCode = await executeSchemaCommand(program, { color: false })
 
       expect(exitCode).toBe(0)
       const parsed = JSON.parse(stdoutOutput)
       expect(parsed.name).toBe('manel')
-      expect(parsed.version).toBe('0.1.0')
+      expect(parsed.version).toBe(PACKAGE_VERSION)
       expect(parsed.commands).toBeDefined()
       expect(Array.isArray(parsed.commands)).toBe(true)
     })
 
     it('should include all expected commands', async () => {
+      const program = createProgram()
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(program, { color: false })
 
       const parsed = JSON.parse(stdoutOutput)
       const commandNames = parsed.commands.map((c: any) => c.name)
@@ -476,7 +480,7 @@ describe('CLI End-to-End Integration', () => {
         } catch {
           // expected
         }
-        expect(output).toContain('0.1.0')
+        expect(output).toContain(PACKAGE_VERSION)
       } finally {
         process.stdout.write = origWrite
       }

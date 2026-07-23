@@ -20,6 +20,13 @@ vi.mock('fs/promises', () => ({
 import { createProgram } from '../index'
 import type { ToolSchema, CommandSchema, FlagSchema } from '../../shared/types'
 
+// Read version dynamically from package.json
+import { readFileSync } from 'fs'
+import { join } from 'path'
+const PACKAGE_VERSION = JSON.parse(
+  readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
+).version
+
 describe('Schema Command', () => {
   let stdoutOutput: string
   let originalStdoutWrite: typeof process.stdout.write
@@ -44,7 +51,7 @@ describe('Schema Command', () => {
   describe('Basic schema output', () => {
     it('should produce valid JSON', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({ color: false })
+      const exitCode = await executeSchemaCommand(createProgram(), { color: false })
 
       expect(exitCode).toBe(0)
       expect(() => JSON.parse(stdoutOutput)).not.toThrow()
@@ -52,14 +59,14 @@ describe('Schema Command', () => {
 
     it('should return exit code 0 on success', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({ color: false })
+      const exitCode = await executeSchemaCommand(createProgram(), { color: false })
 
       expect(exitCode).toBe(0)
     })
 
     it('should include tool name "manel"', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       expect(schema.name).toBe('manel')
@@ -67,7 +74,7 @@ describe('Schema Command', () => {
 
     it('should include version string', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       expect(typeof schema.version).toBe('string')
@@ -76,7 +83,7 @@ describe('Schema Command', () => {
 
     it('should include description string', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       expect(typeof schema.description).toBe('string')
@@ -91,7 +98,7 @@ describe('Schema Command', () => {
   describe('Command completeness', () => {
     it('should include all 7 commands', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       expect(schema.commands).toHaveLength(7)
@@ -99,7 +106,7 @@ describe('Schema Command', () => {
 
     it('should include status command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const statusCmd = schema.commands.find(c => c.name === 'status')
@@ -110,7 +117,7 @@ describe('Schema Command', () => {
 
     it('should include scan command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scanCmd = schema.commands.find(c => c.name === 'scan')
@@ -119,7 +126,7 @@ describe('Schema Command', () => {
 
     it('should include vulnerabilities command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const vulnsCmd = schema.commands.find(c => c.name === 'vulnerabilities')
@@ -128,7 +135,7 @@ describe('Schema Command', () => {
 
     it('should include hardening command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const hardeningCmd = schema.commands.find(c => c.name === 'hardening')
@@ -137,7 +144,7 @@ describe('Schema Command', () => {
 
     it('should include score command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scoreCmd = schema.commands.find(c => c.name === 'score')
@@ -146,7 +153,7 @@ describe('Schema Command', () => {
 
     it('should include updates command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const updatesCmd = schema.commands.find(c => c.name === 'updates')
@@ -155,7 +162,7 @@ describe('Schema Command', () => {
 
     it('should include schema command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const schemaCmd = schema.commands.find(c => c.name === 'schema')
@@ -164,7 +171,7 @@ describe('Schema Command', () => {
 
     it('should have all commands with name, description, flags, and examples', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       for (const cmd of schema.commands) {
@@ -183,7 +190,7 @@ describe('Schema Command', () => {
   describe('Flag completeness', () => {
     it('should include global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       expect(schema.globalFlags).toBeDefined()
@@ -193,7 +200,7 @@ describe('Schema Command', () => {
 
     it('should include --format flag in global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const formatFlag = schema.globalFlags.find(f => f.name === '--format')
@@ -207,7 +214,7 @@ describe('Schema Command', () => {
 
     it('should include --output flag in global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const outputFlag = schema.globalFlags.find(f => f.name === '--output')
@@ -217,7 +224,7 @@ describe('Schema Command', () => {
 
     it('should include --no-color flag in global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const noColorFlag = schema.globalFlags.find(f => f.name === '--no-color')
@@ -227,7 +234,7 @@ describe('Schema Command', () => {
 
     it('should include --quiet flag in global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const quietFlag = schema.globalFlags.find(f => f.name === '--quiet')
@@ -237,7 +244,7 @@ describe('Schema Command', () => {
 
     it('should include --verbose flag in global flags', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const verboseFlag = schema.globalFlags.find(f => f.name === '--verbose')
@@ -245,19 +252,9 @@ describe('Schema Command', () => {
       expect(verboseFlag!.type).toBe('boolean')
     })
 
-    it('should include --no-interactive flag in global flags', async () => {
-      const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
-
-      const schema = JSON.parse(stdoutOutput) as ToolSchema
-      const noInteractiveFlag = schema.globalFlags.find(f => f.name === '--no-interactive')
-      expect(noInteractiveFlag).toBeDefined()
-      expect(noInteractiveFlag!.type).toBe('boolean')
-    })
-
     it('should have scan command with --severity flag', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scanCmd = schema.commands.find(c => c.name === 'scan')
@@ -268,7 +265,7 @@ describe('Schema Command', () => {
 
     it('should have scan command with --fail-on flag', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scanCmd = schema.commands.find(c => c.name === 'scan')
@@ -283,7 +280,7 @@ describe('Schema Command', () => {
 
     it('should have all flags with required properties', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const allFlags = [
@@ -309,7 +306,7 @@ describe('Schema Command', () => {
   describe('Flag short aliases', () => {
     it('should include short alias for --format (-f)', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const formatFlag = schema.globalFlags.find(f => f.name === '--format')
@@ -318,7 +315,7 @@ describe('Schema Command', () => {
 
     it('should include short alias for --output (-o)', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const outputFlag = schema.globalFlags.find(f => f.name === '--output')
@@ -327,7 +324,7 @@ describe('Schema Command', () => {
 
     it('should include short alias for --quiet (-q)', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const quietFlag = schema.globalFlags.find(f => f.name === '--quiet')
@@ -336,7 +333,7 @@ describe('Schema Command', () => {
 
     it('should include short alias for --verbose (-V)', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const verboseFlag = schema.globalFlags.find(f => f.name === '--verbose')
@@ -345,7 +342,7 @@ describe('Schema Command', () => {
 
     it('should include short alias for --severity (-s) in scan command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scanCmd = schema.commands.find(c => c.name === 'scan')
@@ -361,7 +358,7 @@ describe('Schema Command', () => {
   describe('Command examples', () => {
     it('should have at least one example per command', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       for (const cmd of schema.commands) {
@@ -371,7 +368,7 @@ describe('Schema Command', () => {
 
     it('should have examples that reference the correct command or its alias', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       // The vulnerabilities command uses alias "vulns" in examples
@@ -391,7 +388,7 @@ describe('Schema Command', () => {
 
     it('should have status command examples including format flag', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const statusCmd = schema.commands.find(c => c.name === 'status')
@@ -401,7 +398,7 @@ describe('Schema Command', () => {
 
     it('should have scan command examples including severity flag', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const scanCmd = schema.commands.find(c => c.name === 'scan')
@@ -417,7 +414,7 @@ describe('Schema Command', () => {
   describe('Schema consistency with program', () => {
     it('should have same command count as program', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const program = createProgram()
@@ -428,7 +425,7 @@ describe('Schema Command', () => {
 
     it('should have same command names as program', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
       const program = createProgram()
@@ -452,7 +449,7 @@ describe('Schema Command', () => {
       }))
 
       const { executeSchemaCommand } = await import('../commands/schema')
-      const exitCode = await executeSchemaCommand({
+      const exitCode = await executeSchemaCommand(createProgram(), {
         color: false,
         output: '/tmp/manel-schema.json',
       })
@@ -478,7 +475,7 @@ describe('Schema Command', () => {
   describe('Machine readability', () => {
     it('should be parseable as ToolSchema type', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput)
 
@@ -517,11 +514,11 @@ describe('Schema Command', () => {
     it('should be stable across multiple invocations', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
 
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
       const firstOutput = stdoutOutput
 
       stdoutOutput = ''
-      await executeSchemaCommand({ color: false })
+      await executeSchemaCommand(createProgram(), { color: false })
       const secondOutput = stdoutOutput
 
       // The schema should be deterministic

@@ -8,14 +8,15 @@
  */
 
 import type { Command } from 'commander'
-import type { Technology } from '../../shared/types'
 import { detectAll, detectOS } from '../../core/scanner'
 import { getLatestVersion } from '../../core/update-engine'
 import { formatOutput } from '../output'
 import type { OutputTechnology } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
-import { successEnvelope, errorEnvelope } from '../errors'
+import { Spinner, setActiveSpinner } from '../spinner'
+import { getPackageVersion } from '../version'
+import { getEcosystemName } from '../utils'
 import { internalError, formatErrorForStderr } from '../errors'
 
 // ============================================================================
@@ -36,7 +37,11 @@ export function registerStatusCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
-    .option('--no-interactive', 'Disable interactive prompts (for CI/CD)')
+    .addHelpText('after', `
+Examples:
+  $ manel status
+  $ manel status --format json
+  $ manel status --format sarif --output status.sarif`)
     .action(async (options: CommonFlags) => {
       await executeStatusCommand(options)
     })
@@ -60,6 +65,10 @@ export async function executeStatusCommand(options: CommonFlags): Promise<number
   const ttyInfo = detectTTY()
   const useColor = options.color ?? ttyInfo.useColor
   const format = options.format ?? 'table'
+  const version = getPackageVersion()
+
+  const spinner = new Spinner('📋 Detecting technologies...', { enabled: !options.quiet })
+  setActiveSpinner(spinner)
 
   try {
     // Detect all technologies
@@ -99,15 +108,11 @@ export async function executeStatusCommand(options: CommonFlags): Promise<number
 
     const allTechnologies = [osTechnology, ...enrichedTechnologies]
 
-    // Create response envelope
-    const duration = Date.now() - startTime
-    const envelope = successEnvelope({ technologies: allTechnologies }, duration)
-
     // Format output
     const formattedOutput = formatOutput(
-      { technologies: allTechnologies } as any,
+      { technologies: allTechnologies },
       format,
-      { color: useColor, isTTY: ttyInfo.isTTY, duration, version: '0.1.0' }
+      { color: useColor, isTTY: ttyInfo.isTTY, duration: Date.now() - startTime, version }
     )
 
     // Write output
@@ -118,53 +123,16 @@ export async function executeStatusCommand(options: CommonFlags): Promise<number
       process.stdout.write(formattedOutput)
     }
 
+    spinner.stop('✅ Technologies detected')
     return 0
   } catch (err) {
+    spinner.stop()
     const duration = Date.now() - startTime
     const error = internalError(
       err instanceof Error ? err.message : 'Unknown error during status command'
     )
-    const envelope = errorEnvelope(error, duration)
 
     process.stderr.write(formatErrorForStderr(error, useColor))
     return 2
   }
-}
-
-// ============================================================================
-// 3. Helper Functions
-// ============================================================================
-
-/**
- * Get ecosystem name for a technology.
- *
- * @param name - Technology name
- * @returns Ecosystem identifier
- */
-function getEcosystemName(name: string): string {
-  const ecosystemMap: Record<string, string> = {
-    node: 'npm',
-    npm: 'npm',
-    yarn: 'npm',
-    pnpm: 'npm',
-    git: 'git',
-    docker: 'docker',
-    'docker-compose': 'docker',
-    python: 'PyPI',
-    python3: 'PyPI',
-    pip: 'PyPI',
-    java: 'Maven',
-    maven: 'Maven',
-    gradle: 'Maven',
-    code: 'VSCode',
-    postgresql: 'PostgreSQL',
-    mysql: 'MySQL',
-    mariadb: 'MySQL',
-    mongodb: 'MongoDB',
-    redis: 'Redis',
-    sqlite3: 'SQLite',
-    pgadmin4: 'PostgreSQL',
-  }
-
-  return ecosystemMap[name] ?? 'unknown'
 }
