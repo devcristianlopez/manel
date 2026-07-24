@@ -14,7 +14,9 @@ import { registerStatusCommand } from './commands/status'
 import { registerScanCommand } from './commands/scan'
 import { registerVulnerabilitiesCommand } from './commands/vulnerabilities'
 import { registerHardeningCommand } from './commands/hardening'
+import { registerHistoryCommand } from './commands/history'
 import { registerScoreCommand } from './commands/score'
+import { registerSyncCommand } from './commands/sync'
 import { registerUpdatesCommand } from './commands/updates'
 import { registerSchemaCommand } from './commands/schema'
 
@@ -86,7 +88,9 @@ function createProgram(): Command {
   registerScanCommand(program)
   registerVulnerabilitiesCommand(program)
   registerHardeningCommand(program)
+  registerHistoryCommand(program)
   registerScoreCommand(program)
+  registerSyncCommand(program)
   registerUpdatesCommand(program)
   registerSchemaCommand(program)
 
@@ -156,7 +160,9 @@ export { registerStatusCommand }
 export { registerScanCommand }
 export { registerVulnerabilitiesCommand }
 export { registerHardeningCommand }
+export { registerHistoryCommand }
 export { registerScoreCommand }
+export { registerSyncCommand }
 export { registerUpdatesCommand }
 export { registerSchemaCommand }
 

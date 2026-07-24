@@ -15,7 +15,7 @@ import type { CoreTechnologyResult, CoreHardeningCheck } from '../../core/types'
 import { detectAll, detectOS } from '../../core/scanner'
 import { analyzeAllTechnologies, runHardeningChecks, calculateScoreBreakdown } from '../../core/security'
 import { getLatestVersion } from '../../core/update-engine'
-import { formatOutput } from '../output'
+import { formatOutput, yellow } from '../output'
 import type { OutputScanResult, OutputTechnology, OutputVulnerability, OutputHardeningResult, OutputSecurityScore, OutputScanSummary } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
@@ -46,12 +46,14 @@ export function registerScanCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
+    .option('--offline', 'Run fully offline using local synced vulnerability data (requires manel sync)')
     .addHelpText('after', `
 Examples:
   $ manel scan
   $ manel scan --format json
   $ manel scan --format sarif --output scan.sarif
   $ manel scan --severity HIGH,CRITICAL
+  $ manel scan --offline
   $ manel scan --fail-on critical --no-color`)
     .action(async (options: CommonFlags) => {
       await executeScanCommand(options)
@@ -89,7 +91,7 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
     const osInfo = detectOS()
 
     // Step 2: Analyze vulnerabilities
-    spinner.step('  Analyzing vulnerabilities...')
+    spinner.step(options.offline ? '  Analyzing vulnerabilities (offline)...' : '  Analyzing vulnerabilities...')
     const technologyResults = await analyzeAllTechnologies(
       softwareList.map(sw => ({
         name: sw.name,
@@ -97,15 +99,33 @@ export async function executeScanCommand(options: CommonFlags): Promise<number> 
         id: sw.id,
       })),
       {
-        getLatestVersion: async (name: string) => {
-          try {
-            return await getLatestVersion(name)
-          } catch {
-            return null
-          }
-        },
+        offline: options.offline ?? false,
+        // Offline mode skips latest-version lookups entirely (no network access)
+        ...(options.offline
+          ? {}
+          : {
+              getLatestVersion: async (name: string) => {
+                try {
+                  return await getLatestVersion(name)
+                } catch {
+                  return null
+                }
+              },
+            }),
       }
     )
+
+    // Warn when offline mode yields no local vulnerability data at all
+    if (
+      options.offline &&
+      technologyResults.every(tr => tr.vulnerabilities.length === 0) &&
+      !options.quiet
+    ) {
+      const offlineWarning = "⚠ No local vulnerability data found. Run 'manel sync' first to download the offline database."
+      process.stderr.write(
+        (useColor ? yellow(offlineWarning, { forceColor: true }) : offlineWarning) + '\n'
+      )
+    }
 
     // Step 3: Run hardening checks
     let hardeningChecks: CoreHardeningCheck[] = []

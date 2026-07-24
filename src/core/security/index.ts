@@ -11,6 +11,12 @@
 // Vulnerability sources
 export { queryOSV, queryNVD, queryGitHubAdvisory, queryAllSources } from './vulnerability-sources'
 
+// Offline OSV sync + local query
+export { OSV_ECOSYSTEMS, syncEcosystem, getLastSync } from './osv-sync'
+export type { OsvEcosystem, SyncResult } from './osv-sync'
+export { queryLocalDB, hasLocalData } from './local-query'
+export { queryOffline } from './vulnerability-sources'
+
 // Cache
 export { VulnerabilityCache } from './cache'
 

@@ -85,6 +85,8 @@ export interface CommonFlags {
   quiet?: boolean
   /** Verbose mode */
   verbose?: boolean
+  /** Run fully offline using local synced data only */
+  offline?: boolean
 }
 
 // ============================================================================

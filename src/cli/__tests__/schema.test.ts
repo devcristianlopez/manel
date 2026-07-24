@@ -96,12 +96,12 @@ describe('Schema Command', () => {
   // =========================================================================
 
   describe('Command completeness', () => {
-    it('should include all 7 commands', async () => {
+    it('should include all 9 commands', async () => {
       const { executeSchemaCommand } = await import('../commands/schema')
       await executeSchemaCommand(createProgram(), { color: false })
 
       const schema = JSON.parse(stdoutOutput) as ToolSchema
-      expect(schema.commands).toHaveLength(7)
+      expect(schema.commands).toHaveLength(9)
     })
 
     it('should include status command', async () => {

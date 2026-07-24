@@ -54,6 +54,16 @@ const COMMAND_EXAMPLES: Record<string, string[]> = {
     'manel updates --format json',
     'manel updates --format table --output updates.txt',
   ],
+  sync: [
+    'manel sync',
+    'manel sync --ecosystem npm,PyPI',
+    'manel sync --force --format json',
+  ],
+  history: [
+    'manel history',
+    'manel history --last 20',
+    'manel history --format json',
+  ],
   schema: [
     'manel schema',
     'manel schema --output schema.json',

@@ -9,7 +9,13 @@
  */
 
 import type { SourceConfig } from '../types'
-import { getCachedVersion, setCachedVersion } from '../database/cache'
+import {
+  getCachedVersion,
+  setCachedVersion,
+  recordApiFailure,
+  hasRecentApiFailure,
+  clearApiFailure,
+} from '../database/cache'
 
 // ============================================================================
 // 1. Constants
@@ -368,6 +374,8 @@ export function getCache(): VersionCache {
  *
  * Queries the configured source API, caches the result,
  * and returns the latest version string.
+ * Failed API calls are negatively cached for 15 minutes —
+ * repeat calls within that window return null without network access.
  *
  * @param techName - Technology name (must be in TECH_SOURCES)
  * @returns Latest version string, or null if unavailable
@@ -382,15 +390,26 @@ export async function getLatestVersion(techName: string): Promise<string | null>
     return null
   }
 
+  // Negative cache: skip the network entirely if this API failed recently
+  const failureKey = `version:${techName}`
+  if (hasRecentApiFailure(failureKey)) {
+    return null
+  }
+
   try {
     const data = await fetchJson(source.url)
     const version = source.parse(data)
     if (version) {
       versionCache.set(techName, version)
+      clearApiFailure(failureKey)
+      return version
     }
-    return version
+    // Parse returned null — treat as a failure (negative cache)
+    recordApiFailure(failureKey)
+    return null
   } catch (err) {
     console.error(`[update-engine] Error fetching latest version for ${techName}:`, err)
+    recordApiFailure(failureKey)
     return null
   }
 }

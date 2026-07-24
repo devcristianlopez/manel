@@ -9,7 +9,7 @@
  */
 
 import type { CoreTechnologyResult, CoreVulnerability, TechnologyStatus } from '../types'
-import { queryAllSources } from './vulnerability-sources'
+import { queryAllSources, queryOffline } from './vulnerability-sources'
 import { SOFTWARE_ECOSYSTEM_MAP } from './ecosystem-map'
 
 // ============================================================================
@@ -179,6 +179,8 @@ export interface AnalyzeOptions {
   getLatestVersion?: (name: string) => Promise<string | null>
   /** Function to save vulnerabilities to the database */
   saveVulnerabilities?: (vulns: Array<Omit<CoreVulnerability, 'softwareId'>>) => CoreVulnerability[]
+  /** If true, use only the local synced vulnerability DB and skip all network access */
+  offline?: boolean
 }
 
 /**
@@ -216,7 +218,9 @@ async function doAnalyzeTechnology(
   let vulnerabilities: CoreVulnerability[] = []
   if (ecosystem) {
     try {
-      const rawVulns = await queryAllSources(ecosystem, name, version)
+      const rawVulns = options.offline === true
+        ? queryOffline(ecosystem, name, version)
+        : await queryAllSources(ecosystem, name, version)
       const vulnsWithSoftwareId = rawVulns.map(v => ({
         ...v,
         softwareId,
@@ -231,8 +235,10 @@ async function doAnalyzeTechnology(
     }
   }
 
+  // Offline mode skips version checks entirely: latest-version lookups may hit
+  // the network, and even cached values could be stale, so latestVersion stays null.
   let latestVersion: string | null = null
-  if (options.getLatestVersion) {
+  if (options.offline !== true && options.getLatestVersion) {
     try {
       latestVersion = await options.getLatestVersion(name)
     } catch (err) {

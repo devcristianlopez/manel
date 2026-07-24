@@ -130,6 +130,30 @@ function initializeSchema(): void {
       data TEXT NOT NULL,
       fetched_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS vuln_db (
+      id TEXT NOT NULL,
+      ecosystem TEXT NOT NULL,
+      package_name TEXT NOT NULL,
+      aliases TEXT,
+      severity TEXT NOT NULL,
+      summary TEXT,
+      events TEXT,
+      versions TEXT,
+      PRIMARY KEY (id, ecosystem, package_name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_vuln_db_pkg ON vuln_db(ecosystem, package_name);
+
+    CREATE TABLE IF NOT EXISTS sync_metadata (
+      ecosystem TEXT PRIMARY KEY,
+      synced_at INTEGER NOT NULL,
+      entry_count INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS api_failures (
+      api_key TEXT PRIMARY KEY,
+      failed_at INTEGER NOT NULL
+    );
   `)
 }
 

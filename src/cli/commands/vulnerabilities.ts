@@ -12,7 +12,7 @@ import type { CoreTechnologyResult } from '../../core/types'
 import { detectAll } from '../../core/scanner'
 import { analyzeAllTechnologies } from '../../core/security'
 import { getLatestVersion } from '../../core/update-engine'
-import { formatOutput } from '../output'
+import { formatOutput, yellow } from '../output'
 import type { OutputVulnerability } from '../output/types'
 import { detectTTY } from '../output'
 import type { CommonFlags } from '../flags'
@@ -44,11 +44,13 @@ export function registerVulnerabilitiesCommand(program: Command): void {
     .option('--no-color', 'Disable ANSI color output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('-V, --verbose', 'Enable verbose output')
+    .option('--offline', 'Run fully offline using local synced vulnerability data (requires manel sync)')
     .addHelpText('after', `
 Examples:
   $ manel vulnerabilities
   $ manel vulns --format json
   $ manel vulns --severity CRITICAL
+  $ manel vulns --offline
   $ manel vulns --fail-on high --output vulns.json`)
     .action(async (options: CommonFlags) => {
       await executeVulnerabilitiesCommand(options)
@@ -85,7 +87,7 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
     const softwareList = detectAll()
 
     // Analyze for vulnerabilities
-    spinner.step('  Querying vulnerability databases...')
+    spinner.step(options.offline ? '  Querying local vulnerability database...' : '  Querying vulnerability databases...')
     const technologyResults = await analyzeAllTechnologies(
       softwareList.map(sw => ({
         name: sw.name,
@@ -93,15 +95,33 @@ export async function executeVulnerabilitiesCommand(options: CommonFlags): Promi
         id: sw.id,
       })),
       {
-        getLatestVersion: async (name: string) => {
-          try {
-            return await getLatestVersion(name)
-          } catch {
-            return null
-          }
-        },
+        offline: options.offline ?? false,
+        // Offline mode skips latest-version lookups entirely (no network access)
+        ...(options.offline
+          ? {}
+          : {
+              getLatestVersion: async (name: string) => {
+                try {
+                  return await getLatestVersion(name)
+                } catch {
+                  return null
+                }
+              },
+            }),
       }
     )
+
+    // Warn when offline mode yields no local vulnerability data at all
+    if (
+      options.offline &&
+      technologyResults.every(tr => tr.vulnerabilities.length === 0) &&
+      !options.quiet
+    ) {
+      const offlineWarning = "⚠ No local vulnerability data found. Run 'manel sync' first to download the offline database."
+      process.stderr.write(
+        (useColor ? yellow(offlineWarning, { forceColor: true }) : offlineWarning) + '\n'
+      )
+    }
 
     // Persist results to database
     try {

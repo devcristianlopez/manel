@@ -65,6 +65,12 @@ export {
   queryNVD,
   queryGitHubAdvisory,
   queryAllSources,
+  OSV_ECOSYSTEMS,
+  syncEcosystem,
+  getLastSync,
+  queryLocalDB,
+  hasLocalData,
+  queryOffline,
   VulnerabilityCache,
   SOFTWARE_ECOSYSTEM_MAP,
   EOL_DATES,
@@ -80,7 +86,7 @@ export {
   hardeningStatusToScore,
   runHardeningChecks,
 } from './security'
-export type { AnalyzeOptions } from './security'
+export type { AnalyzeOptions, OsvEcosystem, SyncResult } from './security'
 
 // Update Engine
 export {
@@ -116,4 +122,7 @@ export {
   getCachedVulnerabilities,
   setCachedVulnerabilities,
   clearExpiredVulnerabilities,
+  recordApiFailure,
+  hasRecentApiFailure,
+  clearApiFailure,
 } from './database/cache'

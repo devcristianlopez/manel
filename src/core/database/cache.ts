@@ -138,3 +138,65 @@ export function clearExpiredVulnerabilities(): void {
     // Silently fail
   }
 }
+
+// ============================================================================
+// 3. API Failure Cache (Negative Caching)
+// ============================================================================
+
+/** Negative cache TTL: 15 minutes */
+const FAILURE_TTL_MS = 15 * 60 * 1000
+
+/**
+ * Record an API failure (for negative caching).
+ *
+ * Silently ignores DB errors.
+ *
+ * @param key - API key identifier (e.g., 'version:node')
+ */
+export function recordApiFailure(key: string): void {
+  try {
+    const db = getDatabase()
+    db.prepare(
+      'INSERT OR REPLACE INTO api_failures (api_key, failed_at) VALUES (?, ?)'
+    ).run(key, Date.now())
+  } catch {
+    // Silently fail if DB not initialized
+  }
+}
+
+/**
+ * Check if an API recently failed (within 15 minutes).
+ *
+ * Returns false on DB errors.
+ *
+ * @param key - API key identifier
+ * @returns true if the API failed within the TTL window
+ */
+export function hasRecentApiFailure(key: string): boolean {
+  try {
+    const db = getDatabase()
+    const row = db.prepare(
+      'SELECT failed_at FROM api_failures WHERE api_key = ?'
+    ).get(key) as { failed_at: number } | undefined
+
+    if (!row) return false
+
+    return Date.now() - row.failed_at < FAILURE_TTL_MS
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Clear a recorded failure (e.g., after a successful call).
+ *
+ * @param key - API key identifier
+ */
+export function clearApiFailure(key: string): void {
+  try {
+    const db = getDatabase()
+    db.prepare('DELETE FROM api_failures WHERE api_key = ?').run(key)
+  } catch {
+    // Silently fail
+  }
+}
