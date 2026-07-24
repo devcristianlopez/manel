@@ -446,6 +446,33 @@ CREATE TABLE vulnerability_cache (
   data       TEXT NOT NULL,                -- JSON array of CoreVulnerability
   fetched_at INTEGER NOT NULL              -- Unix ms; entries expire after 24h
 );
+
+-- Offline vulnerability database (synced from OSV data dumps)
+CREATE TABLE vuln_db (
+  id           TEXT NOT NULL,              -- GHSA-xxxx / CVE-xxxx
+  ecosystem    TEXT NOT NULL,              -- npm | PyPI | Maven
+  package_name TEXT NOT NULL,              -- lowercase
+  aliases      TEXT,                       -- JSON array (CVE ids)
+  severity     TEXT NOT NULL,              -- CRITICAL | HIGH | MEDIUM | LOW | NONE
+  summary      TEXT,
+  events       TEXT,                       -- JSON: [{introduced, fixed, last_affected}, ...]
+  versions     TEXT,                       -- JSON array of explicit versions
+  PRIMARY KEY (id, ecosystem, package_name)
+);
+CREATE INDEX idx_vuln_db_pkg ON vuln_db(ecosystem, package_name);
+
+-- Offline sync state per ecosystem
+CREATE TABLE sync_metadata (
+  ecosystem   TEXT PRIMARY KEY,
+  synced_at   INTEGER NOT NULL,            -- Unix ms
+  entry_count INTEGER NOT NULL
+);
+
+-- Negative cache for failing APIs (rate limits, outages)
+CREATE TABLE api_failures (
+  api_key   TEXT PRIMARY KEY,              -- e.g. 'version:node'
+  failed_at INTEGER NOT NULL               -- Unix ms; retried after 15 min
+);
 ```
 
 ### Caching Strategy
@@ -463,6 +490,23 @@ The database path defaults to `~/.manel/manel.db` and can be overridden with
 the `MANEL_DB_PATH` environment variable (useful for tests). Initialization
 happens in `createProgram()`; failures are non-fatal — the CLI keeps working
 without persistence.
+
+### Offline Mode (OSV sync)
+
+`manel sync` downloads OSV per-ecosystem data dumps
+(`https://osv-vulnerabilities.storage.googleapis.com/{ecosystem}/all.zip`)
+and indexes them into `vuln_db`. Query resolution order in
+`queryAllSources`:
+
+1. **Local DB** — if `sync_metadata` shows a sync fresher than 7 days, the
+   query is answered locally (zero network).
+2. **Response cache** — `vulnerability_cache` (24 h).
+3. **Live APIs** — OSV + NVD + GHSA in parallel; results cached only if at
+   least one source succeeded (API failures never cached as "clean").
+
+`--offline` on `scan`/`vulnerabilities` forces path 1 and also skips version
+lookups entirely. `getLatestVersion` consults `api_failures` before fetching
+and records failures there (15 min negative TTL).
 
 ### Relationships
 

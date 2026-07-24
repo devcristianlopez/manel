@@ -153,6 +153,8 @@ hash -r
 | `manel hardening` | Hardening checks only (Linux) |
 | `manel score` | Detailed security score |
 | `manel updates` | Check for available updates |
+| `manel sync` | Download offline vulnerability database (OSV) |
+| `manel history` | Show past scan results |
 | `manel schema` | CLI introspective JSON (AI-friendly) |
 
 ### Usage examples
@@ -175,6 +177,13 @@ manel score --no-color
 
 # Check for available updates
 manel updates --format json
+
+# Download offline vulnerability DB, then scan without network
+manel sync
+manel scan --offline
+
+# Review past scans
+manel history --last 5
 ```
 
 ## Standard Flags
@@ -190,7 +199,7 @@ All commands support the following flags:
 | `--no-color` | Disable ANSI color output |
 | `-q, --quiet` | Suppress non-error output |
 | `-V, --verbose` | Enable verbose output |
-| `--no-interactive` | Disable interactive prompts (for CI/CD) |
+| `--offline` | Run fully offline using local synced data (`scan`, `vulnerabilities`) |
 
 ### Output Formats
 
@@ -310,6 +319,24 @@ Manel stores API responses and scan results in a local SQLite database at `~/.ma
 - **Scan history** — every `scan`/`vulnerabilities` run persists detected software, findings, and score for auditing
 
 The first run queries external APIs; subsequent runs within 24h are network-free for cached data. Override the database location with the `MANEL_DB_PATH` environment variable (useful for tests and CI).
+
+### Offline Mode
+
+For fully offline operation, download the complete OSV vulnerability database with `manel sync`:
+
+```bash
+manel sync                      # Auto-detect ecosystems from installed software
+manel sync --ecosystem npm,PyPI # Specific ecosystems
+manel sync --force              # Re-sync even if fresh (< 24h)
+```
+
+Synced data (npm ~200MB, PyPI ~31MB, Maven ~9MB) is indexed into the local `vuln_db` table. Once synced:
+
+- `manel scan --offline` / `manel vulns --offline` make **zero network requests**
+- Without `--offline`, fresh local data (< 7 days) is still preferred over live API calls
+- API failures are negative-cached for 15 minutes, so rate-limited sources are not retried on every run
+
+Version-range matching (introduced/fixed) is evaluated locally — no semver service needed.
 
 ## Development
 

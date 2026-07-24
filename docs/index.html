@@ -95,13 +95,24 @@
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
           <h3>Smart Local Cache</h3>
-          <p>Vulnerability and version data cached 24h in local SQLite — repeat scans skip the network entirely and avoid API rate limits.</p>
+          <p>Vulnerability and version data cached 24h in local SQLite — repeat scans skip the network and avoid API rate limits.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📴</div>
+          <h3>Offline Mode</h3>
+          <p><code>manel sync</code> downloads the full OSV database locally — <code>--offline</code> scans run with zero network requests.</p>
         </div>
 
         <div class="feature-card">
           <div class="feature-icon">📈</div>
           <h3>Scan History</h3>
-          <p>Every scan is persisted locally with its score and findings — audit past results and track your security posture over time.</p>
+          <p>Every scan is persisted locally — <code>manel history</code> shows past scores and findings to track your posture over time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>AI-Friendly Schema</h3>
+          <p><code>manel schema</code> outputs a JSON describing every command and flag — plug Manel into AI agents and automation.</p>
         </div>
       </div>
     </div>
