@@ -395,7 +395,7 @@ manel sync --ecosystem npm,PyPI # Specific ecosystems
 manel sync --force              # Re-sync even if fresh (< 24h)
 ```
 
-Synced data (npm ~200MB, PyPI ~31MB, Maven ~9MB) is indexed into the local `vuln_db` table. Once synced:
+**Where does the data come from?** `manel sync` downloads the public [OSV.dev](https://osv.dev) database dumps directly from Google's servers (`osv-vulnerabilities.storage.googleapis.com`) and indexes them into your local SQLite at `~/.manel/manel.db`. The vulnerability data is **not** bundled with the npm package or the repo — new CVEs are published every day, so the database is fetched on demand and stays under your control. Sizes: npm ~200MB, PyPI ~31MB, Maven ~9MB. Once synced:
 
 - `manel scan --offline` / `manel vulns --offline` make **zero network requests**
 - Without `--offline`, fresh local data (< 7 days) is still preferred over live API calls

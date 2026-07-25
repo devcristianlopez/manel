@@ -44,7 +44,7 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
-      <span class="hero-badge">v1.0.0 • Código Abierto</span>
+      <span class="hero-badge" id="version-badge">v1.2.1 • Código Abierto</span>
       <h1>Monitor de Salud de Seguridad para tu Entorno de Desarrollo</h1>
       <p class="hero-subtitle">Escanea tu software instalado, detecta vulnerabilidades y monitorea tu postura de seguridad — todo desde tu terminal.</p>
 
@@ -177,7 +177,7 @@
 <span class="comment"># Detecta los ecosistemas de tu software instalado</span>
 <span class="command">manel sync</span></pre>
         </div>
-        <p class="usage-note">La primera vez tarda unos minutos (el dump de npm pesa ~200 MB). Re-ejecuta semanalmente.</p>
+        <p class="usage-note">Descarga la base pública de <a href="https://osv.dev" target="_blank" rel="noopener" style="color: var(--accent-primary)">OSV.dev</a> desde los servidores de Google a <code>~/.manel/manel.db</code> — no viene en el repo porque los CVEs se publican a diario. La primera sync tarda unos minutos (npm ~200 MB); re-ejecuta semanalmente.</p>
       </div>
 
       <div class="usage-block">
@@ -353,6 +353,20 @@
         setTimeout(() => { event.target.textContent = '📋'; }, 2000);
       });
     }
+
+    // Fetch latest release version from GitHub
+    (function updateVersionBadge() {
+      const badge = document.getElementById('version-badge');
+      if (!badge) return;
+      fetch('https://api.github.com/repos/devcristianlopez/manel/releases/latest')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.tag_name) {
+            badge.textContent = badge.textContent.replace(/v\d+\.\d+\.\d+/, data.tag_name);
+          }
+        })
+        .catch(() => { /* keep static fallback */ });
+    })();
 
     function copyBlock(id) {
       const block = document.getElementById(id);
