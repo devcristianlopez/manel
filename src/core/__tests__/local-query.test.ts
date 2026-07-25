@@ -264,7 +264,62 @@ describe('Local Vulnerability Query', () => {
     })
   })
 
-  describe('hasLocalData', () => {
+  describe('versionsEqual zero-padding (regression: Django 4.2 vs 4.2.0)', () => {
+  it('should match when OSV lists 4.2 and installed reports 4.2.0', () => {
+    const db = getDatabase()
+    db.prepare(
+      "INSERT OR REPLACE INTO vuln_db (id, ecosystem, package_name, aliases, severity, summary, events, versions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(
+      'GHSA-test-pad1', 'PyPI', 'django', '["CVE-2024-9990"]', 'HIGH', 'padding test',
+      '[{"introduced":"4.2"},{"fixed":"4.2.16"}]',
+      '["4.2","4.2.1","4.2.10","4.2.2"]'
+    )
+    const result = queryLocalDB('PyPI', 'django', '4.2.0')
+    expect(result.some(v => v.cve === 'CVE-2024-9990')).toBe(true)
+  })
+
+  it('should match padded version on the list side (1.2.0 vs 1.2)', () => {
+    const db = getDatabase()
+    db.prepare(
+      "INSERT OR REPLACE INTO vuln_db (id, ecosystem, package_name, aliases, severity, summary, events, versions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(
+      'GHSA-test-pad2', 'PyPI', 'pkg-b', null, 'LOW', 'padding reverse',
+      null, '["1.2.0","1.3.0"]'
+    )
+    const result = queryLocalDB('PyPI', 'pkg-b', '1.2')
+    expect(result.some(v => v.cve === 'GHSA-test-pad2')).toBe(true)
+  })
+
+  it('should NOT match genuinely different versions', () => {
+    const db = getDatabase()
+    db.prepare(
+      "INSERT OR REPLACE INTO vuln_db (id, ecosystem, package_name, aliases, severity, summary, events, versions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(
+      'GHSA-test-pad3', 'PyPI', 'pkg-c', null, 'LOW', 'no match',
+      null, '["4.2","4.2.1"]'
+    )
+    const result = queryLocalDB('PyPI', 'pkg-c', '4.3.0')
+    expect(result.some(v => v.cve === 'GHSA-test-pad3')).toBe(false)
+  })
+
+  it('should not match pre-release tags via numeric comparison', () => {
+    const db = getDatabase()
+    db.prepare(
+      "INSERT OR REPLACE INTO vuln_db (id, ecosystem, package_name, aliases, severity, summary, events, versions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(
+      'GHSA-test-pad4', 'PyPI', 'pkg-d', null, 'LOW', 'prerelease',
+      null, '["4.0a1"]'
+    )
+    // '4.0a1' is not string-equal and not numeric — must not equal '4.0.0'
+    const result = queryLocalDB('PyPI', 'pkg-d', '4.0.0')
+    expect(result.some(v => v.cve === 'GHSA-test-pad4')).toBe(false)
+    // but exact string match must work
+    const exact = queryLocalDB('PyPI', 'pkg-d', '4.0a1')
+    expect(exact.some(v => v.cve === 'GHSA-test-pad4')).toBe(true)
+  })
+})
+
+describe('hasLocalData', () => {
     it('should return false when ecosystem was never synced', () => {
       expect(hasLocalData('npm')).toBe(false)
     })

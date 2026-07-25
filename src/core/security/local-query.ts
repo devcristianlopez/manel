@@ -60,6 +60,31 @@ function compareVersions(a: string, b: string): number {
   return 0
 }
 
+/**
+ * Check whether two version strings denote the same version.
+ *
+ * Handles zero-padding differences between ecosystems: OSV lists
+ * Django's first 4.2-series release as '4.2' while pip reports the
+ * installed version as '4.2.0' — semantically identical.
+ *
+ * Falls back to strict equality when segments are non-numeric
+ * (e.g., pre-release tags like '4.0a1').
+ *
+ * @param a - First version string
+ * @param b - Second version string
+ * @returns True if both versions are semantically equal
+ */
+function versionsEqual(a: string, b: string): boolean {
+  if (a === b) return true
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  if (pa.some(isNaN) || pb.some(isNaN)) return false
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return false
+  }
+  return true
+}
+
 // ============================================================================
 // 3. Affected-Version Matching
 // ============================================================================
@@ -132,7 +157,9 @@ function rowAffectsVersion(row: VulnDbRow, version: string): boolean {
     try {
       const versions = JSON.parse(row.versions) as string[]
       if (Array.isArray(versions)) {
-        return versions.includes(version)
+        // Semantic comparison: OSV lists may write '4.2' where the
+        // installed version reports '4.2.0' — same release.
+        return versions.some(v => versionsEqual(v, version))
       }
     } catch {
       // Malformed JSON — fall through to events
