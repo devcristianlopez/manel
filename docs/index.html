@@ -28,7 +28,7 @@
 
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
-        <li><a href="#quickstart">Install</a></li>
+        <li><a href="#usage">Usage</a></li>
         <li><a href="#formats">Docs</a></li>
         <li><a href="https://github.com/devcristianlopez/manel" target="_blank" rel="noopener">GitHub</a></li>
         <li>
@@ -154,33 +154,108 @@
     </div>
   </section>
 
-  <!-- Quick Start Section -->
-  <section class="quickstart" id="quickstart">
+  <!-- Usage Section -->
+  <section class="quickstart" id="usage">
     <div class="container">
       <div class="section-header">
-        <h2>Quick Start</h2>
-        <p>Get up and running in seconds.</p>
+        <h2>How to Use Manel</h2>
+        <p>Common workflows — from first setup to fully offline security checks.</p>
       </div>
 
-      <div class="code-block">
-        <div class="code-header">
-          <span>terminal</span>
-          <button class="copy-btn" onclick="copyBlock('code-quickstart')" aria-label="Copy code">📋</button>
-        </div>
-        <pre class="code-body" id="code-quickstart"><span class="comment"># Install Manel globally</span>
+      <div class="usage-grid">
+      <div class="usage-block">
+        <h3><span class="step-num">1</span> Install & first setup</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-setup')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-setup"><span class="comment"># Install globally from npm</span>
 <span class="command">npm install -g manel</span>
 
-<span class="comment"># Scan your system</span>
-<span class="command">manel scan</span>
+<span class="comment"># Download the offline vulnerability database (one time)</span>
+<span class="comment"># Auto-detects ecosystems from your installed software</span>
+<span class="command">manel sync</span></pre>
+        </div>
+        <p class="usage-note">First run takes a few minutes (npm dump is ~200 MB). Re-run weekly to stay fresh.</p>
+      </div>
 
-<span class="comment"># Get JSON output</span>
-<span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">json</span>
+      <div class="usage-block">
+        <h3><span class="step-num">2</span> Daily security check</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-daily')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-daily"><span class="comment"># Quick overview of detected technologies</span>
+<span class="command">manel status</span>
 
-<span class="comment"># Check hardening status</span>
-<span class="command">manel hardening</span>
+<span class="comment"># Full scan: vulnerabilities + hardening + score</span>
+<span class="command">manel scan</span></pre>
+        </div>
+      </div>
 
-<span class="comment"># View security score</span>
-<span class="command">manel score</span></pre>
+      <div class="usage-block">
+        <h3><span class="step-num">3</span> Focus on what matters</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-filter')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-filter"><span class="comment"># Only critical and high severity findings</span>
+<span class="command">manel vulns</span> <span class="flag">--severity</span> <span class="string">CRITICAL,HIGH</span>
+
+<span class="comment"># Fail the command (exit 1) if anything critical exists</span>
+<span class="comment"># — perfect for pre-commit hooks and pipelines</span>
+<span class="command">manel scan</span> <span class="flag">--fail-on</span> <span class="string">critical</span></pre>
+        </div>
+      </div>
+
+      <div class="usage-block">
+        <h3><span class="step-num">4</span> Export & integrate</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-export')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-export"><span class="comment"># SARIF report for GitHub Code Scanning</span>
+<span class="command">manel scan</span> <span class="flag">--format</span> <span class="string">sarif</span> <span class="flag">--output</span> <span class="string">scan.sarif</span>
+
+<span class="comment"># JSON for scripts and dashboards</span>
+<span class="command">manel score</span> <span class="flag">--format</span> <span class="string">json</span> | jq .data.overall</pre>
+        </div>
+      </div>
+
+      <div class="usage-block">
+        <h3><span class="step-num">5</span> Work fully offline</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-offline')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-offline"><span class="comment"># Zero network requests — uses the synced local database</span>
+<span class="command">manel scan</span> <span class="flag">--offline</span>
+
+<span class="comment"># Great for planes, secure networks, and CI without internet</span>
+<span class="command">manel vulns</span> <span class="flag">--offline</span> <span class="flag">--severity</span> <span class="string">CRITICAL</span></pre>
+        </div>
+        <p class="usage-note">Requires "manel sync" beforehand. Local data stays fresh for 7 days.</p>
+      </div>
+
+      <div class="usage-block">
+        <h3><span class="step-num">6</span> Track your posture over time</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>terminal</span>
+            <button class="copy-btn" onclick="copyBlock('code-history')" aria-label="Copy code">📋</button>
+          </div>
+          <pre class="code-body" id="code-history"><span class="comment"># List your last scans with scores and findings</span>
+<span class="command">manel history</span>
+
+<span class="comment"># More entries, machine-readable</span>
+<span class="command">manel history</span> <span class="flag">--last</span> <span class="string">20</span> <span class="flag">--format</span> <span class="string">json</span></pre>
+        </div>
+      </div>
       </div>
     </div>
   </section>

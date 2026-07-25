@@ -186,6 +186,71 @@ manel scan --offline
 manel history --last 5
 ```
 
+## Common Workflows
+
+### 1. First-time setup
+
+```bash
+# Install globally from npm
+npm install -g manel
+
+# Download the offline vulnerability database (one time)
+# Auto-detects ecosystems from your installed software
+manel sync
+```
+
+> First sync takes a few minutes (npm dump is ~200 MB). Re-run weekly to stay fresh — local data is trusted for 7 days.
+
+### 2. Daily security check
+
+```bash
+# Quick overview of detected technologies
+manel status
+
+# Full scan: vulnerabilities + hardening + score
+manel scan
+```
+
+### 3. Focus on what matters
+
+```bash
+# Only critical and high severity findings
+manel vulns --severity CRITICAL,HIGH
+
+# Fail (exit 1) if anything critical exists — great for pre-commit hooks
+manel scan --fail-on critical
+```
+
+### 4. Export & integrate
+
+```bash
+# SARIF report for GitHub Code Scanning
+manel scan --format sarif --output scan.sarif
+
+# JSON for scripts and dashboards
+manel score --format json | jq .data.overall
+```
+
+### 5. Work fully offline
+
+```bash
+# Zero network requests — uses the synced local database
+manel scan --offline
+manel vulns --offline --severity CRITICAL
+```
+
+> Requires `manel sync` beforehand. Ideal for planes, secure networks, and CI runners without internet access.
+
+### 6. Track your posture over time
+
+```bash
+# List your last scans with scores and findings
+manel history
+
+# More entries, machine-readable
+manel history --last 20 --format json
+```
+
 ## Standard Flags
 
 All commands support the following flags:
